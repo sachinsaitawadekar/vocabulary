@@ -20,16 +20,61 @@ $nextStmt->execute(['date' => $date]);
 $nextDate = $nextStmt->fetchColumn();
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vocabulary</title>
   <style>
-    body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: Arial, sans-serif; }
-    .word { font-size: 3em; margin: 20px; }
-    .nav { margin-top: 20px; }
-    a { text-decoration: none; padding: 10px 15px; border: 1px solid #ddd; border-radius: 8px; margin: 0 5px; background: #f8f8f8; }
-    a:hover { background: #ddd; }
-    .date { font-size: 1.2em; color: #555; }
+    body {
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      min-height: 100vh; 
+      font-family: Arial, sans-serif; 
+      margin: 0; 
+      padding: 20px;
+      text-align: center;
+    }
+    .word {
+      font-size: 3em; 
+      margin: 20px; 
+      word-wrap: break-word;
+    }
+    .date {
+      font-size: 1.2em; 
+      color: #555;
+    }
+    .nav {
+      margin-top: 20px; 
+      display: flex; 
+      gap: 10px; 
+      flex-wrap: wrap;
+    }
+    a {
+      text-decoration: none; 
+      padding: 10px 15px; 
+      border: 1px solid #ddd; 
+      border-radius: 8px; 
+      background: #f8f8f8; 
+      transition: background 0.3s;
+      font-size: 1em;
+    }
+    a:hover {
+      background: #ddd;
+    }
+    @media (max-width: 768px) {
+      .word { font-size: 2em; }
+      .date { font-size: 1em; }
+      a { font-size: 0.9em; padding: 8px 12px; }
+    }
+    @media (max-width: 480px) {
+      .word { font-size: 1.5em; }
+      .date { font-size: 0.9em; }
+      .nav { flex-direction: column; align-items: center; }
+      a { width: 100%; text-align: center; }
+    }
   </style>
 </head>
 <body>
