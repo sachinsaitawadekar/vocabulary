@@ -1,0 +1,5 @@
+CREATE TABLE vocabulary (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    word VARCHAR(255) NOT NULL,
+    entry_date DATE NOT NULL UNIQUE
+);
