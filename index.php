@@ -43,7 +43,7 @@
   </style>
 </head>
 <body>
-  <?php include("header.php"); ?>
+
   <h1>📘 Vocabulary App</h1>
   <div class="menu">
     <a href="vocabulary.php">📖 Vocabulary</a>

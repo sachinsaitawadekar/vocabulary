@@ -26,7 +26,6 @@
   </style>
 </head>
 <body>
-  <?php include("header.php"); ?>
   <div class="card">
     <h2>Register</h2>
     <form>
