@@ -23,7 +23,7 @@ $nextDate = $nextStmt->fetchColumn();
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Vocabulary</title>
   <style>
     body {
@@ -32,6 +32,7 @@ $nextDate = $nextStmt->fetchColumn();
       align-items: center; 
       justify-content: center; 
       min-height: 100vh; 
+      min-height: 100dvh; /* Better fit on mobile browsers */
       font-family: Arial, sans-serif; 
       margin: 0; 
       padding: 20px;
@@ -52,7 +53,7 @@ $nextDate = $nextStmt->fetchColumn();
       gap: 10px; 
       flex-wrap: wrap;
     }
-    a {
+    .nav a {
       text-decoration: none; 
       padding: 10px 15px; 
       border: 1px solid #ddd; 
@@ -61,19 +62,19 @@ $nextDate = $nextStmt->fetchColumn();
       transition: background 0.3s;
       font-size: 1em;
     }
-    a:hover {
+    .nav a:hover {
       background: #ddd;
     }
     @media (max-width: 768px) {
       .word { font-size: 2em; }
       .date { font-size: 1em; }
-      a { font-size: 0.9em; padding: 8px 12px; }
+      .nav a { font-size: 0.9em; padding: 8px 12px; }
     }
     @media (max-width: 480px) {
       .word { font-size: 1.5em; }
       .date { font-size: 0.9em; }
       .nav { flex-direction: column; align-items: center; }
-      a { width: 100%; text-align: center; }
+      .nav a { width: 100%; text-align: center; }
     }
   </style>
 </head>

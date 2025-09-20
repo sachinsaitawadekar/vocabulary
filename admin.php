@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Admin - Vocabulary</title>
   <style>
     body {
@@ -28,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       justify-content: center; 
       align-items: center; 
       min-height: 100vh; 
+      min-height: 100dvh; /* Better mobile vh */
       margin: 0;
       padding: 20px;
       background: #f5f5f5;
@@ -42,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       max-width: 400px; 
       text-align: center;
     }
-    input {
+    .card input {
       padding: 10px; 
       font-size: 16px; 
       width: 100%; 
@@ -50,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       border: 1px solid #ccc; 
       border-radius: 8px;
     }
-    button {
+    .card button {
       padding: 10px; 
       font-size: 16px; 
       cursor: pointer; 
@@ -61,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       width: 100%;
       transition: background 0.3s;
     }
-    button:hover {
+    .card button:hover {
       background: #0056b3;
     }
     .msg {
@@ -71,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     @media (max-width: 480px) {
       .card { padding: 15px; }
-      input, button { font-size: 14px; padding: 8px; }
+      .card input, .card button { font-size: 14px; padding: 8px; }
     }
   </style>
 </head>

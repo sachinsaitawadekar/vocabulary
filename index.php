@@ -5,7 +5,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Vocabulary App - Home</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#007BFF">
@@ -25,14 +25,14 @@
       display: flex; flex-direction: column;
       gap: 15px; width: 80%; max-width: 400px;
     }
-    a, button {
+    .menu a, .menu button {
       display: block; text-align: center;
       background: #007BFF; color: #fff; text-decoration: none;
       padding: 15px; border-radius: 10px;
       font-size: 18px; font-weight: bold;
       transition: 0.3s; border: none; cursor: pointer;
     }
-    a:hover, button:hover {
+    .menu a:hover, .menu button:hover {
       background: #0056b3;
     }
     #installBtn {
