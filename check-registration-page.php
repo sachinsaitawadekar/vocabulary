@@ -14,9 +14,9 @@ session_start();
     .label { display: block; font-weight: 600; margin-bottom: 6px; }
     .row { display: flex; gap: 8px; align-items: center; }
     .prefix { background: #f3f4f6; padding: 10px 12px; border-radius: 8px; border: 1px solid #ccc; color: #111827; min-width: 64px; text-align: center; font-weight: 600; }
-    input { width: 100%; padding: 10px; font-size: 1em; border-radius: 8px; border: 1px solid #ccc; }
-    button { width: 100%; padding: 12px; margin-top: 8px; font-size: 1rem; border-radius: 10px; border: none; cursor: pointer; background: #007BFF; color: #fff; transition: background 0.2s; }
-    button:hover { background: #0056b3; }
+    .card input { width: 100%; padding: 10px; font-size: 1em; border-radius: 8px; border: 1px solid #ccc; }
+    .card button { width: 100%; padding: 12px; margin-top: 8px; font-size: 1rem; border-radius: 10px; border: none; cursor: pointer; background: #007BFF; color: #fff; transition: background 0.2s; }
+    .card button:hover { background: #0056b3; }
     .errors { background: #fdecea; color: #b91c1c; border: 1px solid #fecaca; padding: 10px; border-radius: 8px; margin-top: 10px; }
     .success { background: #e7f7ef; color: #065f46; border: 1px solid #a7f3d0; padding: 10px; border-radius: 8px; margin-top: 10px; }
     .info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; margin-top: 10px; }
