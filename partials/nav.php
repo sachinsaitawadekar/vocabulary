@@ -22,9 +22,9 @@
     box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     z-index: 1000;
   }
-  .topnav .brand a {
-    color: #007BFF; text-decoration: none; font-weight: 700; font-size: 1.1rem;
-  }
+  .topnav .brand { display: inline-flex; align-items: center; gap: 8px; }
+  .topnav .brand img { width: 28px; height: 28px; border-radius: 6px; display: inline-block; }
+  .topnav .brand a { color: #007BFF; text-decoration: none; font-weight: 700; font-size: 1.1rem; }
   .topnav .links {
     display: flex; gap: 8px; align-items: center;
   }
@@ -59,7 +59,10 @@
 </style>
 
 <nav class="topnav" role="navigation" aria-label="Primary">
-  <div class="brand"><a href="index.php">📘 Vocabulary</a></div>
+  <div class="brand">
+    <img src="picons/icon-192.png" alt="3S English Academy" />
+    <a href="index.php">3S English Academy</a>
+  </div>
   <button class="hamburger" aria-label="Toggle menu" aria-expanded="false">☰</button>
   <div class="links" id="navLinks">
     <a href="index.php">Home</a>
