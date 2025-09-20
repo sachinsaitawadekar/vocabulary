@@ -35,7 +35,21 @@ $nextStmt->execute(['date' => $date]);
 $nextDate = $nextStmt->fetchColumn();
 
 $isToday = ($date === date('Y-m-d'));
-$cardTitle = $isToday ? "Today's Word" : "Oder words";
+$cardTitle = $isToday ? "Today's Word" : "Older Words";
+$idiomTitle = $isToday ? "Today's Idiom" : "Older Idiom";
+
+// Fetch idiom for the date if table exists
+$idiom = null; $idiomMarathi = null; $idiomExample = null;
+try {
+  $stmtI = $pdo->prepare("SELECT idiom, marathi_translation, example FROM idioms WHERE entry_date = :date");
+  $stmtI->execute(['date' => $date]);
+  $rowI = $stmtI->fetch();
+  if ($rowI) {
+    $idiom = $rowI['idiom'];
+    $idiomMarathi = $rowI['marathi_translation'] ?? null;
+    $idiomExample = $rowI['example'] ?? null;
+  }
+} catch (Throwable $e) { /* table may not exist yet */ }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -143,6 +157,24 @@ $cardTitle = $isToday ? "Today's Word" : "Oder words";
           <a href="?date=<?= $nextDate ?>">Next ➡</a>
         <?php endif; ?>
       </nav>
+    </section>
+
+    <section class="card" style="margin-top: 16px;">
+      <div class="card-title"><?= htmlspecialchars($idiomTitle) ?></div>
+      <?php if ($idiom): ?>
+        <div class="header" style="justify-content: space-between; align-items: center;">
+          <h2 class="word" style="font-size: 1.6rem; margin: 0;"><?= htmlspecialchars($idiom) ?></h2>
+          <div class="date-chip">📅 <?= htmlspecialchars($date) ?></div>
+        </div>
+        <?php if ($idiomMarathi): ?>
+          <div class="marathi"><strong>अर्थ:</strong> <span class="value-box"><?= htmlspecialchars($idiomMarathi) ?></span></div>
+        <?php endif; ?>
+        <?php if ($idiomExample): ?>
+          <div class="example"><strong>Sample Sentense:</strong> <span class="value-box">“<?= htmlspecialchars($idiomExample) ?>”</span></div>
+        <?php endif; ?>
+      <?php else: ?>
+        <div style="color:#6b7280;">No idiom set for this date.</div>
+      <?php endif; ?>
     </section>
   </main>
 </body>
