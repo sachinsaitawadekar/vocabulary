@@ -3,12 +3,7 @@ session_start();
 $errors = [];
 $success = '';
 
-// Generate math captcha for GET and after failed POST
-function reset_captcha() {
-  $_SESSION['captcha_a'] = random_int(1, 9);
-  $_SESSION['captcha_b'] = random_int(1, 9);
-  $_SESSION['captcha_answer'] = $_SESSION['captcha_a'] + $_SESSION['captcha_b'];
-}
+// Image captcha handled by captcha.php
 
 // Try DB connection only if available
 $pdo = null;
@@ -35,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($name === '') { $errors[] = 'Full name is required.'; }
   if (!preg_match('/^\d{10}$/', $mobile_raw)) { $errors[] = 'Mobile number must be 10 digits.'; }
 
-  if ($captcha === '' || (int)$captcha !== (int)($_SESSION['captcha_answer'] ?? -1)) {
+  if ($captcha === '' || (int)$captcha !== (int)($_SESSION['captcha_register_answer'] ?? -1)) {
     $errors[] = 'Incorrect captcha answer.';
   }
 
@@ -78,10 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
   }
 
-  // Refresh captcha for next attempt
-  reset_captcha();
-} else {
-  reset_captcha();
+  // No explicit refresh here; captcha image will reload on next GET or manual refresh
 }
 ?>
 <!DOCTYPE html>
@@ -121,6 +113,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .notice-card { margin-bottom: 12px; }
     .notice-card a { color: #007BFF; text-decoration: none; }
     .notice-card a:hover { text-decoration: underline; }
+    .captcha-img { display: block; margin: 6px 0; border: 1px solid #e5e7eb; border-radius: 8px; }
+    .captcha-wrap { display: inline-flex; flex-direction: column; align-items: flex-start; margin-bottom: 10px; }
+    .refresh-link { display: inline-block; margin-top: 6px; color: #007BFF; text-decoration: none; font-size: 0.95rem; }
+    .refresh-link:hover { text-decoration: underline; }
     @media (max-width: 480px) { .row { flex-direction: row; } }
   </style>
 </head>
@@ -149,8 +145,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
       </div>
       <div class="field">
-        <label class="label" for="captcha">Captcha: <?= (int)($_SESSION['captcha_a'] ?? 0) ?> + <?= (int)($_SESSION['captcha_b'] ?? 0) ?> = ?</label>
-        <input id="captcha" name="captcha" type="text" inputmode="numeric" pattern="\\d+" placeholder="Your answer" required>
+        <label class="label" for="captcha">Captcha</label>
+        <div class="captcha-wrap">
+          <img id="captcha_img_reg" class="captcha-img" src="captcha.php?for=register&ts=<?= time() ?>" width="180" height="60" alt="Captcha image">
+          <a id="captcha_refresh_reg" href="#" class="refresh-link" aria-label="Refresh captcha">↻ Refresh</a>
+        </div>
+        <input id="captcha" name="captcha" type="text" inputmode="numeric" pattern="\\d+" placeholder="Enter result" required>
       </div>
       <button type="submit">Register</button>
     </form>
@@ -164,6 +164,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mobile.value = mobile.value.replace(/\D+/g, '').slice(0, 10);
       });
     }
+
+    // Refresh register captcha on demand
+    const capImgReg = document.getElementById('captcha_img_reg');
+    const capBtnReg = document.getElementById('captcha_refresh_reg');
+    function refreshRegCaptcha(){
+      if (capImgReg) {
+        capImgReg.src = 'captcha.php?for=register&ts=' + Date.now();
+      }
+      const capInput = document.getElementById('captcha');
+      if (capInput) { capInput.value = ''; capInput.focus(); }
+    }
+    capBtnReg?.addEventListener('click', (e) => { e.preventDefault(); refreshRegCaptcha(); });
+    capImgReg?.addEventListener('click', refreshRegCaptcha);
 
   </script>
 </body>

@@ -1,11 +1,5 @@
 <?php /* UI page to check registration status by mobile */ 
 session_start();
-// Initialize math captcha values for this page (separate from registration page)
-if (!isset($_SESSION['captcha_chk_a'], $_SESSION['captcha_chk_b'])) {
-  $_SESSION['captcha_chk_a'] = random_int(1, 9);
-  $_SESSION['captcha_chk_b'] = random_int(1, 9);
-}
-$_SESSION['captcha_chk_answer'] = $_SESSION['captcha_chk_a'] + $_SESSION['captcha_chk_b'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -28,6 +22,10 @@ $_SESSION['captcha_chk_answer'] = $_SESSION['captcha_chk_a'] + $_SESSION['captch
     .info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; margin-top: 10px; }
     .blink { animation: blink 1s steps(2, start) infinite; }
     @keyframes blink { to { visibility: hidden; } }
+    .captcha-img { display: block; margin: 6px 0; border: 1px solid #e5e7eb; border-radius: 8px; }
+    .captcha-wrap { display: inline-flex; flex-direction: column; align-items: flex-start; margin-bottom: 10px; }
+    .refresh-link { display: inline-block; margin-top: 6px; color: #007BFF; text-decoration: none; font-size: 0.95rem; }
+    .refresh-link:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -42,8 +40,12 @@ $_SESSION['captcha_chk_answer'] = $_SESSION['captcha_chk_a'] + $_SESSION['captch
       </div>
     </div>
     <div class="field">
-      <label class="label" id="captchaLabel">Captcha: <?php echo (int)($_SESSION['captcha_chk_a'] ?? 0); ?> + <?php echo (int)($_SESSION['captcha_chk_b'] ?? 0); ?> = ?</label>
-      <input id="captcha_input" type="text" inputmode="numeric" pattern="\\d+" placeholder="Your answer">
+      <label class="label" for="captcha_input">Captcha</label>
+      <div class="captcha-wrap">
+        <img id="captcha_img_chk" class="captcha-img" src="captcha.php?for=check&ts=<?= time() ?>" width="180" height="60" alt="Captcha image">
+        <a id="captcha_refresh_chk" href="#" class="refresh-link" aria-label="Refresh captcha">↻ Refresh</a>
+      </div>
+      <input id="captcha_input" type="text" inputmode="numeric" pattern="\\d+" placeholder="Enter result">
     </div>
     <button id="check_btn" type="button">Check</button>
     <div id="result" class="info" style="display:none"></div>
@@ -54,7 +56,16 @@ $_SESSION['captcha_chk_answer'] = $_SESSION['captcha_chk_a'] + $_SESSION['captch
     const btn = document.getElementById('check_btn');
     const result = document.getElementById('result');
     const captchaInput = document.getElementById('captcha_input');
-    const captchaLabel = document.getElementById('captchaLabel');
+    // image-based captcha refresh support
+    const capImgChk = document.getElementById('captcha_img_chk');
+    const capBtnChk = document.getElementById('captcha_refresh_chk');
+    function refreshChkCaptcha(){
+      if (capImgChk) { capImgChk.src = 'captcha.php?for=check&ts=' + Date.now(); }
+      const capInput = document.getElementById('captcha_input');
+      if (capInput) { capInput.value = ''; capInput.focus(); }
+    }
+    capBtnChk?.addEventListener('click', (e) => { e.preventDefault(); refreshChkCaptcha(); });
+    capImgChk?.addEventListener('click', refreshChkCaptcha);
     if (mobile) {
       mobile.addEventListener('input', () => {
         mobile.value = mobile.value.replace(/\D+/g, '').slice(0, 10);

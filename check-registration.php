@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 // Validate captcha (simple math stored in session)
 $captcha = isset($_POST['captcha']) ? trim((string)$_POST['captcha']) : '';
-if ($captcha === '' || !isset($_SESSION['captcha_chk_answer']) || (int)$captcha !== (int)$_SESSION['captcha_chk_answer']) {
+if ($captcha === '' || !isset($_SESSION['captcha_check_answer']) || (int)$captcha !== (int)$_SESSION['captcha_check_answer']) {
   http_response_code(400);
   echo json_encode(['ok' => false, 'error' => 'Invalid captcha']);
   exit;
