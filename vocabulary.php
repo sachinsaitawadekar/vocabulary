@@ -102,6 +102,7 @@ $nextDate = $nextStmt->fetchColumn();
     .date-chip { font-size: 0.95rem; color: #1f2937; background: #eef2ff; border: 1px solid #c7d2fe; padding: 6px 10px; border-radius: 999px; }
     .marathi { color: #1f2937; font-size: 1.15rem; margin-top: 12px; }
     .example { color: #374151; font-style: italic; margin-top: 14px; line-height: 1.6; }
+    .value-box { display: inline-block; padding: 6px 10px; margin-left: 8px; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb; color: #111827; }
     .divider { height: 1px; background: #f3f4f6; margin: 16px 0; border: 0; }
     .pager { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
     .pager a { text-decoration: none; padding: 10px 14px; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb; color: #111827; transition: background 0.2s, border-color 0.2s; font-size: 1rem; }
@@ -123,10 +124,10 @@ $nextDate = $nextStmt->fetchColumn();
         <div class="date-chip">📅 <?= htmlspecialchars($date) ?></div>
       </div>
       <?php if ($marathi): ?>
-        <div class="marathi"><strong>अर्थ:</strong> <?= htmlspecialchars($marathi) ?></div>
+        <div class="marathi"><strong>अर्थ:</strong> <span class="value-box"><?= htmlspecialchars($marathi) ?></span></div>
       <?php endif; ?>
       <?php if ($example): ?>
-        <div class="example"><strong>sample sentense:</strong> “<?= htmlspecialchars($example) ?>”</div>
+        <div class="example"><strong>Sample Sentense:</strong> <span class="value-box">“<?= htmlspecialchars($example) ?>”</span></div>
       <?php endif; ?>
       <hr class="divider" />
       <nav class="pager" aria-label="Word navigation">
