@@ -79,5 +79,19 @@
       }
     });
   </script>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/service-worker.js")
+        .then(reg => {
+          console.log("✅ Service Worker registered successfully:", reg.scope);
+        })
+        .catch(err => {
+          console.error("❌ Service Worker registration failed:", err);
+        });
+    } else {
+      console.warn("⚠️ Service Workers are not supported in this browser.");
+    }
+  </script>
 </body>
 </html>
