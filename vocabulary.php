@@ -27,65 +27,53 @@ $nextDate = $nextStmt->fetchColumn();
   <title>Vocabulary</title>
   <style>
     body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      font-family: Arial, sans-serif;
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      min-height: 100vh; 
+      font-family: Arial, sans-serif; 
+      margin: 0; 
+      padding: 20px;
       text-align: center;
-      padding: 10px;
-      background: #f5f5f5;
     }
-
     .word {
-      font-size: 6vw; /* adjusts based on viewport width */
-      margin: 20px 10px;
+      font-size: 3em; 
+      margin: 20px; 
       word-wrap: break-word;
     }
-
     .date {
-      font-size: 4vw; /* adjusts with viewport */
+      font-size: 1.2em; 
       color: #555;
-      margin-bottom: 15px;
     }
-
     .nav {
-      display: flex;
-      gap: 10px;
+      margin-top: 20px; 
+      display: flex; 
+      gap: 10px; 
       flex-wrap: wrap;
-      justify-content: center;
-      margin-top: 20px;
     }
-
     a {
-      text-decoration: none;
-      padding: 12px 18px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      background: #f8f8f8;
-      color: #007BFF;
-      font-weight: bold;
-      font-size: 4vw; /* adjusts with viewport */
+      text-decoration: none; 
+      padding: 10px 15px; 
+      border: 1px solid #ddd; 
+      border-radius: 8px; 
+      background: #f8f8f8; 
       transition: background 0.3s;
+      font-size: 1em;
     }
-
     a:hover {
       background: #ddd;
     }
-
-    /* Media Queries for very small screens */
-    @media (max-width: 480px) {
-      .word { font-size: 8vw; }
-      .date { font-size: 5vw; }
-      a { font-size: 5vw; padding: 10px 12px; }
+    @media (max-width: 768px) {
+      .word { font-size: 2em; }
+      .date { font-size: 1em; }
+      a { font-size: 0.9em; padding: 8px 12px; }
     }
-
-    @media (min-width: 481px) and (max-width: 768px) {
-      .word { font-size: 7vw; }
-      .date { font-size: 4.5vw; }
-      a { font-size: 4.5vw; padding: 10px 15px; }
+    @media (max-width: 480px) {
+      .word { font-size: 1.5em; }
+      .date { font-size: 0.9em; }
+      .nav { flex-direction: column; align-items: center; }
+      a { width: 100%; text-align: center; }
     }
   </style>
 </head>
