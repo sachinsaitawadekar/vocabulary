@@ -169,7 +169,7 @@ try {
       <div class="card-title"><?= htmlspecialchars($idiomTitle) ?></div>
       <?php if ($idiom): ?>
         <div class="header" style="justify-content: space-between; align-items: center;">
-          <h2 class="word" style="font-size: 1.6rem; margin: 0;"><?= e($idiom) ?></h2>
+          <h2 class="word"><?= e($idiom) ?></h2>
           <div class="date-chip">📅 <?= e($date) ?></div>
         </div>
         <?php if ($idiomMarathi): ?>
