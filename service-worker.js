@@ -1,4 +1,4 @@
-const CACHE_NAME = "vocab-cache-v3";
+const CACHE_NAME = "vocab-cache-v4";
 const urlsToCache = [
   "/",
   "/index.php",       // landing home
@@ -7,7 +7,7 @@ const urlsToCache = [
   "/about.php",       // about class page
   "/admin.php",       // admin page
   "/manifest.json",
-  "/offline.html",
+  "/offline.php",
   "/picons/icon-192.png",
   "/picons/icon-512.png"
 ];
@@ -34,7 +34,7 @@ self.addEventListener("fetch", event => {
     fetch(event.request).catch(() => {
       return caches.match(event.request).then(response => {
         if (response) return response;
-        return caches.match("/offline.html");
+        return caches.match("/offline.php");
       });
     })
   );
