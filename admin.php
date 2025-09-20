@@ -4,13 +4,29 @@ require 'db.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $word = trim($_POST['word']);
+    $marathi = trim($_POST['marathi'] ?? '');
+    $example = trim($_POST['example'] ?? '');
     $today = date("Y-m-d");
 
+    // Ensure columns exist for Marathi and example (idempotent)
+    try {
+        $col = $pdo->query("SHOW COLUMNS FROM vocabulary LIKE 'marathi_translation'");
+        if ($col->rowCount() === 0) {
+            $pdo->exec("ALTER TABLE vocabulary ADD COLUMN marathi_translation VARCHAR(255) NULL");
+        }
+    } catch (Throwable $e) { /* ignore */ }
+    try {
+        $col = $pdo->query("SHOW COLUMNS FROM vocabulary LIKE 'example'");
+        if ($col->rowCount() === 0) {
+            $pdo->exec("ALTER TABLE vocabulary ADD COLUMN example TEXT NULL");
+        }
+    } catch (Throwable $e) { /* ignore */ }
+
     if ($word) {
-        $stmt = $pdo->prepare("INSERT INTO vocabulary (word, entry_date) 
-                               VALUES (:word, :entry_date) 
-                               ON DUPLICATE KEY UPDATE word = :word");
-        $stmt->execute(['word' => $word, 'entry_date' => $today]);
+        $stmt = $pdo->prepare("INSERT INTO vocabulary (word, marathi_translation, example, entry_date) 
+                               VALUES (:word, :marathi, :example, :entry_date) 
+                               ON DUPLICATE KEY UPDATE word = :word, marathi_translation = :marathi, example = :example");
+        $stmt->execute(['word' => $word, 'marathi' => $marathi, 'example' => $example, 'entry_date' => $today]);
         $message = "✅ Today's vocabulary saved!";
     }
 }
@@ -43,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       max-width: 400px; 
       text-align: center;
     }
-    .card input {
+    .card input, .card textarea {
       padding: 10px; 
       font-size: 16px; 
       width: 100%; 
@@ -51,6 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       border: 1px solid #ccc; 
       border-radius: 8px;
     }
+    .card textarea { min-height: 100px; resize: vertical; }
     .card button {
       padding: 10px; 
       font-size: 16px; 
@@ -82,7 +99,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <h2>Admin - Set Today's Word</h2>
     <?php if (!empty($message)) echo "<div class='msg'>$message</div>"; ?>
     <form method="POST">
-      <input type="text" name="word" placeholder="Enter today's word" required>
+      <input type="text" name="word" placeholder="Enter today's word (English)" required>
+      <input type="text" name="marathi" placeholder="Marathi translation (मराठी अर्थ)">
+      <textarea name="example" placeholder="Example sentence (optional)"></textarea>
       <button type="submit">Save</button>
     </form>
   </div>

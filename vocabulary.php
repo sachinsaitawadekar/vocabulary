@@ -3,11 +3,26 @@ require 'db.php';
 
 $date = isset($_GET['date']) ? $_GET['date'] : date("Y-m-d");
 
-// Fetch today/selected date's word
-$stmt = $pdo->prepare("SELECT word FROM vocabulary WHERE entry_date = :date");
-$stmt->execute(['date' => $date]);
-$row = $stmt->fetch();
-$word = $row ? $row['word'] : "No word set for this date!";
+// Fetch today/selected date's word with optional marathi + example
+$word = "No word set for this date!";
+$marathi = null;
+$example = null;
+try {
+  $stmt = $pdo->prepare("SELECT word, marathi_translation, example FROM vocabulary WHERE entry_date = :date");
+  $stmt->execute(['date' => $date]);
+  $row = $stmt->fetch();
+  if ($row) {
+    $word = $row['word'];
+    $marathi = $row['marathi_translation'] ?? null;
+    $example = $row['example'] ?? null;
+  }
+} catch (Throwable $e) {
+  // Fallback if columns not present
+  $stmt = $pdo->prepare("SELECT word FROM vocabulary WHERE entry_date = :date");
+  $stmt->execute(['date' => $date]);
+  $row = $stmt->fetch();
+  if ($row) { $word = $row['word']; }
+}
 
 // Get previous date
 $prevStmt = $pdo->prepare("SELECT entry_date FROM vocabulary WHERE entry_date < :date ORDER BY entry_date DESC LIMIT 1");
@@ -47,6 +62,8 @@ $nextDate = $nextStmt->fetchColumn();
       font-size: 1.2em; 
       color: #555;
     }
+    .marathi { color: #1f2937; font-size: 1.25em; margin-top: 6px; }
+    .example { color: #374151; font-style: italic; margin-top: 10px; max-width: 720px; }
     .nav {
       margin-top: 20px; 
       display: flex; 
@@ -81,6 +98,12 @@ $nextDate = $nextStmt->fetchColumn();
 <body>
   <?php include __DIR__ . '/partials/nav.php'; ?>
   <div class="word"><?= htmlspecialchars($word) ?></div>
+  <?php if ($marathi): ?>
+    <div class="marathi">मराठी: <?= htmlspecialchars($marathi) ?></div>
+  <?php endif; ?>
+  <?php if ($example): ?>
+    <div class="example">“<?= htmlspecialchars($example) ?>”</div>
+  <?php endif; ?>
   <div class="date">📅 <?= htmlspecialchars($date) ?></div>
   <div class="nav">
     <?php if ($prevDate): ?>
