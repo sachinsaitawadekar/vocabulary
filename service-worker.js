@@ -8,8 +8,8 @@ const urlsToCache = [
   "/admin.php",       // admin page
   "/manifest.json",
   "/offline.html",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png"
+  "/picons/icon-192.png",
+  "/picons/icon-512.png"
 ];
 
 // Install Service Worker

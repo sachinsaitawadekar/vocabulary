@@ -9,7 +9,7 @@
   <title>Vocabulary App - Home</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#007BFF">
-  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/picons/icon-192.png">
   <style>
     body {
       font-family: Arial, sans-serif;
