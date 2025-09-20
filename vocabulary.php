@@ -94,24 +94,50 @@ $nextDate = $nextStmt->fetchColumn();
       .nav a { width: 100%; text-align: center; }
     }
   </style>
+  <style>
+    .container { width: 100%; max-width: 760px; margin: 0 auto; padding: 8px; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; box-shadow: 0 6px 18px rgba(0,0,0,0.05); padding: 24px; text-align: left; }
+    .header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+    .word { font-size: 2.5rem; line-height: 1.1; margin: 0; word-wrap: break-word; color: #111827; }
+    .date-chip { font-size: 0.95rem; color: #1f2937; background: #eef2ff; border: 1px solid #c7d2fe; padding: 6px 10px; border-radius: 999px; }
+    .marathi { color: #1f2937; font-size: 1.15rem; margin-top: 12px; }
+    .example { color: #374151; font-style: italic; margin-top: 14px; line-height: 1.6; }
+    .divider { height: 1px; background: #f3f4f6; margin: 16px 0; border: 0; }
+    .pager { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .pager a { text-decoration: none; padding: 10px 14px; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb; color: #111827; transition: background 0.2s, border-color 0.2s; font-size: 1rem; }
+    .pager a:hover { background: #eef2ff; border-color: #c7d2fe; }
+    @media (max-width: 768px) {
+      .word { font-size: 2rem; }
+      .marathi { font-size: 1.05rem; }
+      .pager a { font-size: 0.95rem; padding: 8px 12px; }
+    }
+    @media (max-width: 480px) { .word { font-size: 1.6rem; } .container { padding: 4px; } }
+  </style>
 </head>
 <body>
   <?php include __DIR__ . '/partials/nav.php'; ?>
-  <div class="word"><?= htmlspecialchars($word) ?></div>
-  <?php if ($marathi): ?>
-    <div class="marathi">मराठी: <?= htmlspecialchars($marathi) ?></div>
-  <?php endif; ?>
-  <?php if ($example): ?>
-    <div class="example">“<?= htmlspecialchars($example) ?>”</div>
-  <?php endif; ?>
-  <div class="date">📅 <?= htmlspecialchars($date) ?></div>
-  <div class="nav">
-    <?php if ($prevDate): ?>
-      <a href="?date=<?= $prevDate ?>">⬅ Previous</a>
-    <?php endif; ?>
-    <?php if ($nextDate): ?>
-      <a href="?date=<?= $nextDate ?>">Next ➡</a>
-    <?php endif; ?>
-  </div>
+  <main class="container">
+    <section class="card">
+      <div class="header">
+        <h1 class="word"><?= htmlspecialchars($word) ?></h1>
+        <div class="date-chip">📅 <?= htmlspecialchars($date) ?></div>
+      </div>
+      <?php if ($marathi): ?>
+        <div class="marathi"><strong>अर्थ:</strong> <?= htmlspecialchars($marathi) ?></div>
+      <?php endif; ?>
+      <?php if ($example): ?>
+        <div class="example"><strong>sample sentense:</strong> “<?= htmlspecialchars($example) ?>”</div>
+      <?php endif; ?>
+      <hr class="divider" />
+      <nav class="pager" aria-label="Word navigation">
+        <?php if ($prevDate): ?>
+          <a href="?date=<?= $prevDate ?>">⬅ Previous</a>
+        <?php endif; ?>
+        <?php if ($nextDate): ?>
+          <a href="?date=<?= $nextDate ?>">Next ➡</a>
+        <?php endif; ?>
+      </nav>
+    </section>
+  </main>
 </body>
 </html>
