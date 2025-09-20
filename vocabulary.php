@@ -1,5 +1,11 @@
 <?php
 require 'db.php';
+header('Content-Type: text/html; charset=UTF-8');
+
+// HTML escape helper with explicit UTF-8
+if (!function_exists('e')) {
+  function e($s) { return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
+}
 
 $date = isset($_GET['date']) ? $_GET['date'] : date("Y-m-d");
 
@@ -139,22 +145,22 @@ try {
     <section class="card">
       <div class="card-title"><?= htmlspecialchars($cardTitle) ?></div>
       <div class="header">
-        <h1 class="word"><?= htmlspecialchars($word) ?></h1>
-        <div class="date-chip">📅 <?= htmlspecialchars($date) ?></div>
+        <h1 class="word"><?= e($word) ?></h1>
+        <div class="date-chip">📅 <?= e($date) ?></div>
       </div>
       <?php if ($marathi): ?>
-        <div class="marathi"><strong>अर्थ:</strong> <span class="value-box"><?= htmlspecialchars($marathi) ?></span></div>
+        <div class="marathi"><strong>अर्थ:</strong> <span class="value-box"><?= e($marathi) ?></span></div>
       <?php endif; ?>
       <?php if ($example): ?>
-        <div class="example"><strong>Sample Sentense:</strong> <span class="value-box">“<?= htmlspecialchars($example) ?>”</span></div>
+        <div class="example"><strong>Sample Sentense:</strong> <span class="value-box">“<?= e($example) ?>”</span></div>
       <?php endif; ?>
       <hr class="divider" />
       <nav class="pager" aria-label="Word navigation">
         <?php if ($prevDate): ?>
-          <a href="?date=<?= $prevDate ?>">⬅ Previous</a>
+          <a href="?date=<?= e($prevDate) ?>">⬅ Previous</a>
         <?php endif; ?>
         <?php if ($nextDate): ?>
-          <a href="?date=<?= $nextDate ?>">Next ➡</a>
+          <a href="?date=<?= e($nextDate) ?>">Next ➡</a>
         <?php endif; ?>
       </nav>
     </section>
@@ -163,14 +169,14 @@ try {
       <div class="card-title"><?= htmlspecialchars($idiomTitle) ?></div>
       <?php if ($idiom): ?>
         <div class="header" style="justify-content: space-between; align-items: center;">
-          <h2 class="word" style="font-size: 1.6rem; margin: 0;"><?= htmlspecialchars($idiom) ?></h2>
-          <div class="date-chip">📅 <?= htmlspecialchars($date) ?></div>
+          <h2 class="word" style="font-size: 1.6rem; margin: 0;"><?= e($idiom) ?></h2>
+          <div class="date-chip">📅 <?= e($date) ?></div>
         </div>
         <?php if ($idiomMarathi): ?>
-          <div class="marathi"><strong>अर्थ:</strong> <span class="value-box"><?= htmlspecialchars($idiomMarathi) ?></span></div>
+          <div class="marathi"><strong>अर्थ:</strong> <span class="value-box"><?= e($idiomMarathi) ?></span></div>
         <?php endif; ?>
         <?php if ($idiomExample): ?>
-          <div class="example"><strong>Sample Sentense:</strong> <span class="value-box">“<?= htmlspecialchars($idiomExample) ?>”</span></div>
+          <div class="example"><strong>Sample Sentense:</strong> <span class="value-box">“<?= e($idiomExample) ?>”</span></div>
         <?php endif; ?>
       <?php else: ?>
         <div style="color:#6b7280;">No idiom set for this date.</div>

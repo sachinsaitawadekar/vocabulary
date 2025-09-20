@@ -4,7 +4,7 @@ CREATE TABLE vocabulary (
     marathi_translation VARCHAR(255) NULL,
     example TEXT NULL,
     entry_date DATE NOT NULL UNIQUE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS idioms (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -12,11 +12,11 @@ CREATE TABLE IF NOT EXISTS idioms (
     marathi_translation VARCHAR(255) NULL,
     example TEXT NULL,
     entry_date DATE NOT NULL UNIQUE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE registrations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     full_name VARCHAR(100) NOT NULL,
     mobile VARCHAR(20) NOT NULL UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
