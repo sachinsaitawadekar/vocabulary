@@ -78,7 +78,6 @@ $nextDate = $nextStmt->fetchColumn();
   </style>
 </head>
 <body>
-  <?php include("header.php"); ?>
   <div class="word"><?= htmlspecialchars($word) ?></div>
   <div class="date">📅 <?= htmlspecialchars($date) ?></div>
   <div class="nav">

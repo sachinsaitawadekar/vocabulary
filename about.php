@@ -18,7 +18,6 @@
   </style>
 </head>
 <body>
-  <?php include("header.php"); ?>
   <div class="content">
     <h2>About the Class</h2>
     <p>This class helps students improve their English vocabulary by learning one new word every day.</p>
