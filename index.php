@@ -14,10 +14,12 @@
     body {
       font-family: Arial, sans-serif;
       margin: 0; padding: 0;
-      display: flex; flex-direction: column;
-      justify-content: center; align-items: center;
-      height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
       background: #f5f5f5;
+    }
+    .container {
+      width: 100%; max-width: 720px; margin: 0 auto; padding: 16px;
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
     }
     .menu {
       display: flex; flex-direction: column;
@@ -43,14 +45,16 @@
   </style>
 </head>
 <body>
-
-  <h1>📘 Vocabulary App</h1>
-  <div class="menu">
-    <a href="vocabulary.php">📖 Vocabulary</a>
-    <a href="register.php">📝 Register</a>
-    <a href="about.php">ℹ️ About Class</a>
-    <button id="installBtn">📲 Install App</button>
-  </div>
+  <?php include __DIR__ . '/partials/nav.php'; ?>
+  <main class="container">
+    <h1>📘 Vocabulary App</h1>
+    <div class="menu">
+      <a href="vocabulary.php">📖 Vocabulary</a>
+      <a href="register.php">📝 Register</a>
+      <a href="about.php">ℹ️ About Class</a>
+      <button id="installBtn">📲 Install App</button>
+    </div>
+  </main>
 
   <script>
     // Register service worker

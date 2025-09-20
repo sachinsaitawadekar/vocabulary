@@ -26,6 +26,7 @@
   </style>
 </head>
 <body>
+  <?php include __DIR__ . '/partials/nav.php'; ?>
   <div class="card">
     <h2>Register</h2>
     <form>

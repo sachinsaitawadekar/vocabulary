@@ -76,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </style>
 </head>
 <body>
+  <?php include __DIR__ . '/partials/nav.php'; ?>
   <div class="card">
     <h2>Admin - Set Today's Word</h2>
     <?php if (!empty($message)) echo "<div class='msg'>$message</div>"; ?>
