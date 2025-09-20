@@ -100,7 +100,7 @@ $_SESSION['captcha_chk_answer'] = $_SESSION['captcha_chk_a'] + $_SESSION['captch
           result.innerHTML = `Mobile <strong>${data.data.mobile}</strong> is already registered${formatted ? ' on ' + formatted : ''}.`;
         } else {
           result.className = 'info';
-          result.innerHTML = 'Not registered yet. <span class="blink">You can proceed to <a href="register.php">register</a>.</span>';
+          result.innerHTML = 'Not registered yet. <a href="register.php" class="blink">You can proceed to register.</a>';
         }
       } catch (e) {
         result.className = 'errors';
