@@ -180,7 +180,7 @@ try {
         <?php endif; ?>
       <?php else: ?>
         <div class="header" style="justify-content: space-between; align-items: center;">
-          <h2 class="word" style="color:#6b7280; margin:0;">No idiom set for this date.</h2>
+          <h2 class="word" style="margin:0;">No idiom set for this date!</h2>
           <div class="date-chip">📅 <?= e($date) ?></div>
         </div>
       <?php endif; ?>
