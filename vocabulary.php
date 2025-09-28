@@ -8,6 +8,13 @@ if (!function_exists('e')) {
 }
 
 $date = isset($_GET['date']) ? $_GET['date'] : date("Y-m-d");
+$today = date('Y-m-d');
+// Normalize incoming date and prevent browsing to future dates
+if (!preg_match('~^\d{4}-\d{2}-\d{2}$~', $date)) {
+  $ts = strtotime((string)$date);
+  $date = $ts ? date('Y-m-d', $ts) : $today;
+}
+if ($date > $today) { $date = $today; }
 
 // Fetch today/selected date's word with optional marathi + example
 $word = "No word set for this date!";
@@ -35,9 +42,9 @@ $prevStmt = $pdo->prepare("SELECT entry_date FROM vocabulary WHERE entry_date < 
 $prevStmt->execute(['date' => $date]);
 $prevDate = $prevStmt->fetchColumn();
 
-// Get next date
-$nextStmt = $pdo->prepare("SELECT entry_date FROM vocabulary WHERE entry_date > :date ORDER BY entry_date ASC LIMIT 1");
-$nextStmt->execute(['date' => $date]);
+// Get next date (never beyond today)
+$nextStmt = $pdo->prepare("SELECT entry_date FROM vocabulary WHERE entry_date > :date AND entry_date <= :today ORDER BY entry_date ASC LIMIT 1");
+$nextStmt->execute(['date' => $date, 'today' => $today]);
 $nextDate = $nextStmt->fetchColumn();
 
 $isToday = ($date === date('Y-m-d'));
