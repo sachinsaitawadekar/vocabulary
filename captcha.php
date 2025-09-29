@@ -1,66 +1,54 @@
 <?php
-// Simple image-based math CAPTCHA using GD
+// Simple math CAPTCHA rendered as SVG to avoid GD dependency
 session_start();
 
 $for = isset($_GET['for']) ? strtolower(trim($_GET['for'])) : 'register';
-$w = 180; $h = 60;
 
-// Generate two numbers and compute answer
 $a = random_int(1, 9);
 $b = random_int(1, 9);
-$op = '+'; $ans = $a + $b;
+$ans = $a + $b;
+$expr = sprintf('%d + %d = ?', $a, $b);
 
-// Store answer in session under context-specific key
 if ($for === 'check') {
   $_SESSION['captcha_check_answer'] = $ans;
 } else {
   $_SESSION['captcha_register_answer'] = $ans;
 }
 
-// Create image
-$img = imagecreatetruecolor($w, $h);
-$bg = imagecolorallocate($img, 250, 250, 252);
-$fg = imagecolorallocate($img, 17, 24, 39); // dark text
-$accent = imagecolorallocate($img, 0, 123, 255); // blue accents
-$noise = imagecolorallocate($img, 200, 200, 210);
-imagefilledrectangle($img, 0, 0, $w, $h, $bg);
+$width = 220;
+$height = 80;
+$noiseLines = 6;
+$noiseDots = 50;
 
-// Add noise: lines
-for ($i = 0; $i < 6; $i++) {
-    $x1 = random_int(0, $w); $y1 = random_int(0, $h);
-    $x2 = random_int(0, $w); $y2 = random_int(0, $h);
-    imageline($img, $x1, $y1, $x2, $y2, $noise);
-}
-// Add noise: dots
-for ($i = 0; $i < 150; $i++) {
-    imagesetpixel($img, random_int(0, $w-1), random_int(0, $h-1), $noise);
-}
-
-// Render expression using built-in font to avoid font dependency
-$expr = sprintf('%d %s %d = ?', $a, $op, $b);
-$font = 5; // built-in font size
-$text_w = imagefontwidth($font) * strlen($expr);
-$text_h = imagefontheight($font);
-$x = (int)(($w - $text_w) / 2);
-$y = (int)(($h - $text_h) / 2);
-
-// Draw a rounded-ish backdrop
-imagefilledrectangle($img, $x - 8, $y - 6, $x + $text_w + 8, $y + $text_h + 6, imagecolorallocate($img, 235, 243, 255));
-imagerectangle($img, $x - 8, $y - 6, $x + $text_w + 8, $y + $text_h + 6, $accent);
-
-// Slight jitter on characters for obfuscation
-$cx = $x;
-for ($i = 0, $len = strlen($expr); $i < $len; $i++) {
-    $ch = $expr[$i];
-    imagestring($img, $font, $cx, $y + random_int(-1, 1), $ch, $fg);
-    $cx += imagefontwidth($font);
-}
-
-// Output
-header('Content-Type: image/png');
+header('Content-Type: image/svg+xml');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
-imagepng($img);
-imagedestroy($img);
-exit;
 
+echo '<?xml version="1.0" encoding="UTF-8"?>';
+echo "<svg xmlns='http://www.w3.org/2000/svg' width='{$width}' height='{$height}' viewBox='0 0 {$width} {$height}' role='img' aria-label='Captcha'>";
+echo "<defs><linearGradient id='bg' x1='0' x2='1' y1='0' y2='1'><stop offset='0%' stop-color='#f8fbff'/><stop offset='100%' stop-color='#e8f0ff'/></linearGradient></defs>";
+echo "<rect width='{$width}' height='{$height}' fill='url(#bg)' rx='12' ry='12'/>";
+
+for ($i = 0; $i < $noiseLines; $i++) {
+  $x1 = random_int(0, $width);
+  $y1 = random_int(0, $height);
+  $x2 = random_int(0, $width);
+  $y2 = random_int(0, $height);
+  $opacity = mt_rand(10, 30) / 100;
+  echo "<line x1='{$x1}' y1='{$y1}' x2='{$x2}' y2='{$y2}' stroke='#9fb7ff' stroke-opacity='{$opacity}' stroke-width='2'/>";
+}
+for ($i = 0; $i < $noiseDots; $i++) {
+  $cx = random_int(0, $width);
+  $cy = random_int(0, $height);
+  $r = mt_rand(1, 2);
+  $opacity = mt_rand(10, 35) / 100;
+  echo "<circle cx='{$cx}' cy='{$cy}' r='{$r}' fill='#6c8cff' fill-opacity='{$opacity}'/>";
+}
+
+$offset = mt_rand(-4, 4);
+$cx = $width / 2;
+$cy = $height / 2;
+echo "<text x='50%' y='55%' fill='#0f172a' font-family='\"Gill Sans\", \"Segoe UI\", sans-serif' font-size='28' font-weight='600' text-anchor='middle' dominant-baseline='middle' letter-spacing='2' transform='rotate({$offset} {$cx} {$cy})'>{$expr}</text>";
+
+echo "</svg>";
+exit;

@@ -51,7 +51,7 @@ session_start();
     <div class="field">
       <label class="label" for="captcha_input">Captcha</label>
       <div class="captcha-wrap">
-        <img id="captcha_img_chk" class="captcha-img" src="captcha.php?for=check&ts=<?= time() ?>" width="180" height="60" alt="Captcha image">
+        <img id="captcha_img_chk" class="captcha-img" src="captcha.php?for=check&ts=<?= time() ?>" width="220" height="80" alt="Captcha image">
         <a id="captcha_refresh_chk" href="#" class="refresh-link" aria-label="Refresh captcha">↻ Refresh</a>
       </div>
       <input id="captcha_input" type="text" inputmode="numeric" pattern="\\d+" placeholder="Enter result">

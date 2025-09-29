@@ -156,7 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div class="field">
         <label class="label" for="captcha">Captcha</label>
         <div class="captcha-wrap">
-          <img id="captcha_img_reg" class="captcha-img" src="captcha.php?for=register&ts=<?= time() ?>" width="180" height="60" alt="Captcha image">
+          <img id="captcha_img_reg" class="captcha-img" src="captcha.php?for=register&ts=<?= time() ?>" width="220" height="80" alt="Captcha image">
           <a id="captcha_refresh_reg" href="#" class="refresh-link" aria-label="Refresh captcha">↻ Refresh</a>
         </div>
         <input id="captcha" name="captcha" type="text" inputmode="numeric" pattern="\\d+" placeholder="Enter result" required>
