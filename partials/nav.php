@@ -69,7 +69,6 @@
     <a href="vocabulary.php">Vocabulary</a>
     <a href="register.php">Register</a>
     <a href="about.php">About</a>
-    <a href="admin.php">Admin</a>
   </div>
   <script>
     (function(){
