@@ -1,4 +1,4 @@
-const CACHE_NAME = "vocab-cache-v6";
+const CACHE_NAME = "vocab-cache-v7";
 const urlsToCache = [
   "/",
   "/index.php",       // landing home
@@ -32,6 +32,10 @@ self.addEventListener("activate", event => {
 
 // Fetch with offline fallback
 self.addEventListener("fetch", event => {
+  if (event.request.url.includes('captcha.php')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
   event.respondWith(
     fetch(event.request).catch(() => {
       return caches.match(event.request).then(response => {

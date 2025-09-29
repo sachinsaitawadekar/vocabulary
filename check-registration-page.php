@@ -75,6 +75,9 @@ session_start();
     }
     capBtnChk?.addEventListener('click', (e) => { e.preventDefault(); refreshChkCaptcha(); });
     capImgChk?.addEventListener('click', refreshChkCaptcha);
+    capImgChk?.addEventListener('error', () => {
+      setTimeout(refreshChkCaptcha, 200);
+    });
     if (mobile) {
       mobile.addEventListener('input', () => {
         mobile.value = mobile.value.replace(/\D+/g, '').slice(0, 10);

@@ -186,6 +186,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     capBtnReg?.addEventListener('click', (e) => { e.preventDefault(); refreshRegCaptcha(); });
     capImgReg?.addEventListener('click', refreshRegCaptcha);
+    capImgReg?.addEventListener('error', () => {
+      setTimeout(refreshRegCaptcha, 200);
+    });
 
   </script>
 </body>
