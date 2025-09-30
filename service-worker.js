@@ -1,4 +1,4 @@
-const CACHE_NAME = "vocab-cache-v7";
+const CACHE_NAME = "vocab-cache-v8";
 const urlsToCache = [
   "/",
   "/index.php",       // landing home
@@ -8,6 +8,7 @@ const urlsToCache = [
   "/admin.php",       // admin page
   "/registration-success.php",
   "/check-registration-page.php",
+  "/registrations.php",
   "/manifest.json",
   "/offline.php",
   "/picons/icon-192.png",
