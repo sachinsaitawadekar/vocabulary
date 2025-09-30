@@ -178,15 +178,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <title>Admin - Vocabulary</title>
   <style>
     body {
-      font-family: Arial, sans-serif; 
-      display: flex; 
-      justify-content: center; 
-      align-items: center; 
-      min-height: 100vh; 
-      min-height: 100dvh; /* Better mobile vh */
+      font-family: Arial, sans-serif;
       margin: 0;
-      padding: 20px;
+      min-height: 100vh; min-height: 100dvh;
       background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+    }
+    .page-main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
     }
     .card {
       background: #fff; 
@@ -236,6 +240,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
   <?php include __DIR__ . '/partials/nav.php'; ?>
+  <main class="page-main">
   <div class="stack">
     <div class="card">
       <h2>Admin - Set Today's Word</h2>
@@ -284,6 +289,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </form>
     </div>
   </div>
+  </main>
 
   <?php include __DIR__ . '/partials/footer.php'; ?>
 </body>

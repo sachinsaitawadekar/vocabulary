@@ -21,14 +21,19 @@
     @media (max-width: 768px) { :root { --nav-h: 56px; } }
 
     body {
-      display: flex; 
-      justify-content: center; 
-      align-items: center; 
-      min-height: 100vh; min-height: 100dvh;
       margin: 0;
-      font-family: Arial, sans-serif; 
-      background: #f5f5f5; 
-      text-align: center; 
+      min-height: 100vh; min-height: 100dvh;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      text-align: center;
+    }
+    .page-main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       padding: 20px;
     }
     .card {
@@ -44,11 +49,13 @@
 </head>
 <body>
   <?php include __DIR__ . '/partials/nav.php'; ?>
+  <main class="page-main">
   <div class="card">
     <h2>📴 You’re Offline</h2>
     <p>Don’t worry! Last viewed word is still available if cached.<br>
     Please reconnect to fetch new vocabulary.</p>
   </div>
+  </main>
   <?php include __DIR__ . '/partials/footer.php'; ?>
 </body>
 </html>

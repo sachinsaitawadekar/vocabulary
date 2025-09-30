@@ -81,59 +81,20 @@ try {
   <title>Vocabulary</title>
   <style>
     body {
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
-      justify-content: center; 
-      min-height: 100vh; 
-      min-height: 100dvh; /* Better fit on mobile browsers */
-      font-family: Arial, sans-serif; 
-      margin: 0; 
+      margin: 0;
+      min-height: 100vh; min-height: 100dvh;
+      font-family: Arial, sans-serif;
+      background: #f5f7fb;
+      display: flex;
+      flex-direction: column;
+    }
+    .page-main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
       padding: 20px;
       text-align: center;
     }
-    .word {
-      font-size: 3em; 
-      margin: 20px; 
-      word-wrap: break-word;
-    }
-    .date {
-      font-size: 1.2em; 
-      color: #555;
-    }
-    .marathi { color: #1f2937; font-size: 1.25em; margin-top: 6px; }
-    .example { color: #374151; font-style: italic; margin-top: 10px; max-width: 720px; }
-    .nav {
-      margin-top: 20px; 
-      display: flex; 
-      gap: 10px; 
-      flex-wrap: wrap;
-    }
-    .nav a {
-      text-decoration: none; 
-      padding: 10px 15px; 
-      border: 1px solid #ddd; 
-      border-radius: 8px; 
-      background: #f8f8f8; 
-      transition: background 0.3s;
-      font-size: 1em;
-    }
-    .nav a:hover {
-      background: #ddd;
-    }
-    @media (max-width: 768px) {
-      .word { font-size: 2em; }
-      .date { font-size: 1em; }
-      .nav a { font-size: 0.9em; padding: 8px 12px; }
-    }
-    @media (max-width: 480px) {
-      .word { font-size: 1.5em; }
-      .date { font-size: 0.9em; }
-      .nav { flex-direction: column; align-items: center; }
-      .nav a { width: 100%; text-align: center; }
-    }
-  </style>
-  <style>
     .container { width: 100%; max-width: 760px; margin: 0 auto; padding: 8px; }
     .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; box-shadow: 0 6px 18px rgba(0,0,0,0.05); padding: 24px; text-align: left; }
     .card-title { margin: 0 0 8px; font-weight: 700; color: #007BFF; font-size: 1.1rem; }
@@ -157,7 +118,8 @@ try {
 </head>
 <body>
   <?php include __DIR__ . '/partials/nav.php'; ?>
-  <main class="container">
+  <main class="page-main">
+    <div class="container">
     <section class="card">
       <div class="card-title"><?= htmlspecialchars($cardTitle) ?></div>
       <div class="header">
@@ -201,6 +163,7 @@ try {
         </div>
       <?php endif; ?>
     </section>
+    </div>
   </main>
 
   <?php include __DIR__ . '/partials/footer.php'; ?>

@@ -93,9 +93,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <title>Register - Vocabulary App</title>
   <style>
     body {
-      display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px;
-      min-height: 100vh; min-height: 100dvh; margin: 0; font-family: Arial, sans-serif; 
-      background: #f5f5f5; padding: 20px;
+      margin: 0;
+      min-height: 100vh; min-height: 100dvh;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+    }
+    .page-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 20px;
     }
     .card {
       background: white; padding: 20px; border-radius: 12px; 
@@ -131,6 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
   <?php include __DIR__ . '/partials/nav.php'; ?>
+  <main class="page-main">
   <div class="card notice-card">Already registered? <a href="check-registration-page.php">Check your registration status.</a></div>
   <div class="card" id="formCard">
     <h2>Register</h2>
@@ -191,7 +203,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     });
 
   </script>
-
+  </main>
   <?php include __DIR__ . '/partials/footer.php'; ?>
 </body>
 </html>

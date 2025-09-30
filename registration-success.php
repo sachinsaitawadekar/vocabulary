@@ -22,7 +22,21 @@ if ($data) {
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Registration Success - Vocabulary App</title>
   <style>
-    body { display: flex; justify-content: center; align-items: center; min-height: 100vh; min-height: 100dvh; margin: 0; font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+    body {
+      margin: 0;
+      min-height: 100vh; min-height: 100dvh;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+    }
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
     .card { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.08); width: 100%; max-width: 480px; text-align: center; }
     h2 { color: #007BFF; margin-top: 0; }
     p { color: #374151; }
@@ -33,6 +47,7 @@ if ($data) {
 </head>
 <body>
   <?php include __DIR__ . '/partials/nav.php'; ?>
+  <main>
   <div class="card">
     <?php if ($data): ?>
       <h2>Registration Successful 🎉</h2>
@@ -50,6 +65,7 @@ if ($data) {
       <a class="btn" href="register.php">Go to Register</a>
     <?php endif; ?>
   </div>
+  </main>
   <?php include __DIR__ . '/partials/footer.php'; ?>
 </body>
 </html>

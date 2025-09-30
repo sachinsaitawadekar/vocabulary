@@ -22,9 +22,16 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 0; padding: 0;
-      display: flex; flex-direction: column; align-items: center;
+      margin: 0;
       background: #f5f5f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .page-main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
     }
     .container {
       width: 100%; max-width: 720px; margin: 0 auto; padding: 16px;
@@ -55,13 +62,15 @@
 </head>
 <body>
   <?php include __DIR__ . '/partials/nav.php'; ?>
-  <main class="container">
+  <main class="page-main">
+    <div class="container">
     <h1>📘 Vocabulary App</h1>
     <div class="menu">
       <a href="vocabulary.php">📖 Vocabulary</a>
       <a href="register.php">📝 Register</a>
       <a href="about.php">ℹ️ About Class</a>
       <button id="installBtn">📲 Install App</button>
+    </div>
     </div>
   </main>
 

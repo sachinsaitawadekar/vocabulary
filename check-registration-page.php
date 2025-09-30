@@ -17,7 +17,21 @@ session_start();
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Check Registration - Vocabulary App</title>
   <style>
-    body { display: flex; justify-content: center; align-items: center; min-height: 100vh; min-height: 100dvh; margin: 0; font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+    body {
+      margin: 0;
+      min-height: 100vh; min-height: 100dvh;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+    }
+    .page-main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
     .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 420px; }
     .field { margin: 10px 0; }
     .label { display: block; font-weight: 600; margin-bottom: 6px; }
@@ -39,6 +53,7 @@ session_start();
 </head>
 <body>
   <?php include __DIR__ . '/partials/nav.php'; ?>
+  <main class="page-main">
   <div class="card">
     <h2>Check Registration</h2>
     <div class="field">
@@ -59,6 +74,7 @@ session_start();
     <button id="check_btn" type="button">Check</button>
     <div id="result" class="info" style="display:none"></div>
   </div>
+  </main>
 
   <script>
     const mobile = document.getElementById('check_mobile');
