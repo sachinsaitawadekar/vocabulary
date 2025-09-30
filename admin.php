@@ -1,4 +1,24 @@
 <?php
+session_start();
+
+$requestUri = $_SERVER['REQUEST_URI'] ?? 'admin.php';
+if (!function_exists('str_starts_with')) {
+    function str_starts_with($haystack, $needle) {
+        $needle = (string)$needle;
+        if ($needle === '') {
+            return true;
+        }
+        return strncmp((string)$haystack, $needle, strlen($needle)) === 0;
+    }
+}
+if (empty($_SESSION['is_admin'])) {
+    if (stripos($requestUri, '://') !== false || str_starts_with($requestUri, '//')) {
+        $requestUri = 'admin.php';
+    }
+    header('Location: login.php?redirect=' . rawurlencode($requestUri));
+    exit;
+}
+
 require 'db.php';
 
 
@@ -192,6 +212,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       align-items: center;
       padding: 20px;
     }
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 480px;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .logout-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid #1d4ed8;
+      color: #1d4ed8;
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: background 0.2s, color 0.2s;
+    }
+    .logout-link:hover { background: #1d4ed8; color: #fff; }
     .card {
       background: #fff; 
       padding: 20px; 
@@ -242,6 +284,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php include __DIR__ . '/partials/nav.php'; ?>
   <main class="page-main">
   <div class="stack">
+    <div class="header-bar" aria-label="Admin actions">
+      <h1 style="margin:0; font-size:1.25rem; color:#1d4ed8;">Admin Portal</h1>
+      <a class="logout-link" href="logout.php" rel="nofollow">⎋ Logout</a>
+    </div>
     <div class="card">
       <h2>Admin - Set Today's Word</h2>
       <?php if (!empty($message)) echo "<div class='msg'>$message</div>"; ?>

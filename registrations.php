@@ -1,4 +1,24 @@
 <?php
+session_start();
+
+$requestUri = $_SERVER['REQUEST_URI'] ?? 'registrations.php';
+if (!function_exists('str_starts_with')) {
+    function str_starts_with($haystack, $needle) {
+        $needle = (string)$needle;
+        if ($needle === '') {
+            return true;
+        }
+        return strncmp((string)$haystack, $needle, strlen($needle)) === 0;
+    }
+}
+if (empty($_SESSION['is_admin'])) {
+    if (stripos($requestUri, '://') !== false || str_starts_with($requestUri, '//')) {
+        $requestUri = 'registrations.php';
+    }
+    header('Location: login.php?redirect=' . rawurlencode($requestUri));
+    exit;
+}
+
 require __DIR__ . '/db.php';
 
 function e($value) {
@@ -97,6 +117,27 @@ $sortLabel = $sortLabels[$sortParam] ?? $sortLabels['created_at'];
       color: #1d4ed8;
       text-align: center;
     }
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .logout-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid #1d4ed8;
+      color: #1d4ed8;
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: background 0.2s, color 0.2s;
+    }
+    .logout-link:hover { background: #1d4ed8; color: #fff; }
     .card {
       background: #fff;
       border-radius: 14px;
@@ -213,19 +254,22 @@ $sortLabel = $sortLabels[$sortParam] ?? $sortLabels['created_at'];
       · Sorted by <?= e($sortLabel) ?>
     </p>
     <div class="card">
-      <div class="controls">
-        <div>Page <?= e($page) ?> of <?= e($totalPages) ?> · Total <?= e($totalRows) ?></div>
-        <form method="get" class="per-page">
-          <label for="per_page">Rows per page:</label>
-          <input type="hidden" name="sort" value="<?= e($sortParam) ?>">
-          <input type="hidden" name="dir" value="<?= e($dirParam) ?>">
-          <select id="per_page" name="per_page" onchange="this.form.submit()">
-            <?php foreach ($perPageOptions as $option): ?>
-              <option value="<?= e($option) ?>" <?= $perPage === $option ? 'selected' : '' ?>><?= e($option) ?></option>
-            <?php endforeach; ?>
-          </select>
-          <input type="hidden" name="page" value="1">
-        </form>
+      <div class="header-bar">
+        <div class="controls" style="margin-bottom:0; padding:0;">
+          <div>Page <?= e($page) ?> of <?= e($totalPages) ?> · Total <?= e($totalRows) ?></div>
+          <form method="get" class="per-page" style="margin:0;">
+            <label for="per_page">Rows per page:</label>
+            <input type="hidden" name="sort" value="<?= e($sortParam) ?>">
+            <input type="hidden" name="dir" value="<?= e($dirParam) ?>">
+            <select id="per_page" name="per_page" onchange="this.form.submit()">
+              <?php foreach ($perPageOptions as $option): ?>
+                <option value="<?= e($option) ?>" <?= $perPage === $option ? 'selected' : '' ?>><?= e($option) ?></option>
+              <?php endforeach; ?>
+            </select>
+            <input type="hidden" name="page" value="1">
+          </form>
+        </div>
+        <a class="logout-link" href="logout.php" rel="nofollow">⎋ Logout</a>
       </div>
       <?php if (!$rows): ?>
         <div class="empty-state">No registrations yet.</div>
