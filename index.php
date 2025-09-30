@@ -65,6 +65,8 @@
     </div>
   </main>
 
+  <?php include __DIR__ . '/partials/footer.php'; ?>
+
   <script>
     // Register service worker
     if ("serviceWorker" in navigator) {

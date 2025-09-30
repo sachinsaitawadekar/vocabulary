@@ -50,5 +50,6 @@ if ($data) {
       <a class="btn" href="register.php">Go to Register</a>
     <?php endif; ?>
   </div>
+  <?php include __DIR__ . '/partials/footer.php'; ?>
 </body>
 </html>

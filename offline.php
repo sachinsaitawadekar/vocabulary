@@ -49,5 +49,6 @@
     <p>Don’t worry! Last viewed word is still available if cached.<br>
     Please reconnect to fetch new vocabulary.</p>
   </div>
+  <?php include __DIR__ . '/partials/footer.php'; ?>
 </body>
 </html>

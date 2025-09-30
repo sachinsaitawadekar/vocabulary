@@ -291,5 +291,7 @@ $sortLabel = $sortLabels[$sortParam] ?? $sortLabels['created_at'];
       <?php endif; ?>
     </div>
   </main>
+
+  <?php include __DIR__ . '/partials/footer.php'; ?>
 </body>
 </html>

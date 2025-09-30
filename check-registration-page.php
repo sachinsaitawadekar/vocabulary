@@ -134,5 +134,6 @@ session_start();
     }
     btn?.addEventListener('click', doCheck);
   </script>
+  <?php include __DIR__ . '/partials/footer.php'; ?>
 </body>
 </html>

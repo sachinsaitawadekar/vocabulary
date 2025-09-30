@@ -39,5 +39,7 @@
       <li>Installable as an app (PWA)</li>
     </ul>
   </div>
+
+  <?php include __DIR__ . '/partials/footer.php'; ?>
 </body>
 </html>
