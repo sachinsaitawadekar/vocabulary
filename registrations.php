@@ -45,7 +45,7 @@ function e($value) {
 }
 
 $stageOptions = ['NIL', 'Prospect', 'Enrolled', 'Lost'];
-$discountOptions = ['NIL', '10%', '20%', '30%', '40%'];
+$discountOptions = ['NIL', 'NA', '10%', '20%', '30%', '40%'];
 $referenceOptions = ['NIL', 'Pamphlete', 'Direct', 'Social Media', 'Word of Mouth'];
 
 $allowedSort = [
