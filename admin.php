@@ -11,6 +11,16 @@ if (!function_exists('str_starts_with')) {
         return strncmp((string)$haystack, $needle, strlen($needle)) === 0;
     }
 }
+$allowedIps = @include __DIR__ . '/allowed_ips.php';
+if (!is_array($allowedIps)) {
+    $allowedIps = ['127.0.0.1', '::1'];
+}
+$clientIp = $_SERVER['REMOTE_ADDR'] ?? '';
+if (!in_array($clientIp, $allowedIps, true)) {
+    http_response_code(403);
+    echo 'Access denied.';
+    exit;
+}
 if (empty($_SESSION['is_admin'])) {
     if (stripos($requestUri, '://') !== false || str_starts_with($requestUri, '//')) {
         $requestUri = 'admin.php';
