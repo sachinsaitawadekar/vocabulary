@@ -15,9 +15,15 @@ if (file_exists(__DIR__ . '/db.php')) {
       id INT AUTO_INCREMENT PRIMARY KEY,
       full_name VARCHAR(100) NOT NULL,
       mobile VARCHAR(20) NOT NULL UNIQUE,
+      stage VARCHAR(100) NOT NULL DEFAULT 'NIL',
+      discount VARCHAR(100) NOT NULL DEFAULT 'NIL',
+      reference VARCHAR(150) NOT NULL DEFAULT 'NIL',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
+    try { $col = $pdo->query("SHOW COLUMNS FROM registrations LIKE 'stage'"); if ($col->rowCount() === 0) { $pdo->exec("ALTER TABLE registrations ADD COLUMN stage VARCHAR(100) NOT NULL DEFAULT 'NIL'"); } } catch (Throwable $e) { }
+    try { $col = $pdo->query("SHOW COLUMNS FROM registrations LIKE 'discount'"); if ($col->rowCount() === 0) { $pdo->exec("ALTER TABLE registrations ADD COLUMN discount VARCHAR(100) NOT NULL DEFAULT 'NIL'"); } } catch (Throwable $e) { }
+    try { $col = $pdo->query("SHOW COLUMNS FROM registrations LIKE 'reference'"); if ($col->rowCount() === 0) { $pdo->exec("ALTER TABLE registrations ADD COLUMN reference VARCHAR(150) NOT NULL DEFAULT 'NIL'"); } } catch (Throwable $e) { }
   }
 }
 
@@ -38,8 +44,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mobile_full = '+91' . $mobile_raw;
     if ($pdo instanceof PDO) {
       try {
-        $stmt = $pdo->prepare('INSERT INTO registrations (full_name, mobile) VALUES (:n, :m)');
-        $stmt->execute([':n' => $name, ':m' => $mobile_full]);
+        $stmt = $pdo->prepare('INSERT INTO registrations (full_name, mobile, stage, discount, reference) VALUES (:n, :m, :stage, :discount, :reference)');
+        $stmt->execute([':n' => $name, ':m' => $mobile_full, ':stage' => 'NIL', ':discount' => 'NIL', ':reference' => 'NIL']);
         $lastId = $pdo->lastInsertId();
         $createdAt = null;
         try {

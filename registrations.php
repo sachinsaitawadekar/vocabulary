@@ -21,19 +21,48 @@ if (empty($_SESSION['is_admin'])) {
 
 require __DIR__ . '/db.php';
 
+try {
+    $col = $pdo->query("SHOW COLUMNS FROM registrations LIKE 'stage'");
+    if ($col->rowCount() === 0) {
+        $pdo->exec("ALTER TABLE registrations ADD COLUMN stage VARCHAR(100) NOT NULL DEFAULT 'NIL'");
+    }
+} catch (Throwable $e) { /* ignore */ }
+try {
+    $col = $pdo->query("SHOW COLUMNS FROM registrations LIKE 'discount'");
+    if ($col->rowCount() === 0) {
+        $pdo->exec("ALTER TABLE registrations ADD COLUMN discount VARCHAR(100) NOT NULL DEFAULT 'NIL'");
+    }
+} catch (Throwable $e) { /* ignore */ }
+try {
+    $col = $pdo->query("SHOW COLUMNS FROM registrations LIKE 'reference'");
+    if ($col->rowCount() === 0) {
+        $pdo->exec("ALTER TABLE registrations ADD COLUMN reference VARCHAR(150) NOT NULL DEFAULT 'NIL'");
+    }
+} catch (Throwable $e) { /* ignore */ }
+
 function e($value) {
     return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
+$stageOptions = ['NIL', 'Prospect', 'Enrolled', 'Lost'];
+$discountOptions = ['NIL', '10%', '20%', '30%', '40%'];
+$referenceOptions = ['NIL', 'Pamphlete', 'Direct', 'Social Media', 'Word of Mouth'];
+
 $allowedSort = [
     'full_name' => 'full_name',
     'mobile' => 'mobile',
-    'created_at' => 'created_at'
+    'created_at' => 'created_at',
+    'stage' => 'stage',
+    'discount' => 'discount',
+    'reference' => 'reference'
 ];
 $sortLabels = [
     'full_name' => 'Full Name',
     'mobile' => 'Mobile',
-    'created_at' => 'Registered On'
+    'created_at' => 'Registered On',
+    'stage' => 'Stage',
+    'discount' => 'Discount',
+    'reference' => 'Reference'
 ];
 $sortParam = isset($_GET['sort']) ? strtolower(trim($_GET['sort'])) : 'created_at';
 $sortColumn = $allowedSort[$sortParam] ?? 'created_at';
@@ -56,7 +85,7 @@ $totalPages = $totalRows > 0 ? (int)ceil($totalRows / $perPage) : 1;
 if ($page > $totalPages) { $page = $totalPages; }
 $offset = ($page - 1) * $perPage;
 
-$stmt = $pdo->prepare("SELECT full_name, mobile, created_at FROM registrations ORDER BY {$sortColumn} {$direction} LIMIT :limit OFFSET :offset");
+$stmt = $pdo->prepare("SELECT id, full_name, mobile, stage, discount, reference, created_at FROM registrations ORDER BY {$sortColumn} {$direction} LIMIT :limit OFFSET :offset");
 $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
@@ -81,6 +110,33 @@ $toggleDir = function(string $column) use ($sortParam, $dirParam) {
 $buildQuery = function(array $overrides = []) use ($baseParams) {
     return http_build_query(array_merge($baseParams, $overrides));
 };
+
+$flashMessage = $_SESSION['registrations_flash'] ?? '';
+if ($flashMessage) {
+    unset($_SESSION['registrations_flash']);
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_stage') {
+    $id = (int)($_POST['id'] ?? 0);
+    $stageInput = trim($_POST['stage'] ?? '');
+    $discountInput = trim($_POST['discount'] ?? '');
+    $referenceInput = trim($_POST['reference'] ?? '');
+    $name = trim($_POST['name'] ?? '');
+    $stageValue = in_array($stageInput, $stageOptions, true) ? $stageInput : 'NIL';
+    $discountValue = in_array($discountInput, $discountOptions, true) ? $discountInput : 'NIL';
+    $referenceValue = in_array($referenceInput, $referenceOptions, true) ? $referenceInput : 'NIL';
+    if ($id > 0) {
+        $stmtUpdate = $pdo->prepare('UPDATE registrations SET stage = :stage, discount = :discount, reference = :reference WHERE id = :id');
+        $stmtUpdate->execute([':stage' => $stageValue, ':discount' => $discountValue, ':reference' => $referenceValue, ':id' => $id]);
+        $_SESSION['registrations_flash'] = 'Updated details for ' . ($name !== '' ? $name : ('ID ' . $id)) . '.';
+    } else {
+        $_SESSION['registrations_flash'] = 'Unable to update registration. Invalid record.';
+    }
+    $qs = $_SERVER['QUERY_STRING'] ?? '';
+    $redirect = 'registrations.php' . ($qs ? '?' . $qs : '');
+    header('Location: ' . $redirect);
+    exit;
+}
 
 $sortLabel = $sortLabels[$sortParam] ?? $sortLabels['created_at'];
 ?>
@@ -145,6 +201,15 @@ $sortLabel = $sortLabels[$sortParam] ?? $sortLabels['created_at'];
       padding: 24px;
       overflow-x: auto;
     }
+    .flash {
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
     .controls {
       display: flex;
       justify-content: space-between;
@@ -169,7 +234,7 @@ $sortLabel = $sortLabels[$sortParam] ?? $sortLabels['created_at'];
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 600px;
+      min-width: 960px;
     }
     thead {
       background: #1d4ed8;
@@ -179,6 +244,7 @@ $sortLabel = $sortLabels[$sortParam] ?? $sortLabels['created_at'];
       padding: 14px 16px;
       text-align: left;
       border-bottom: 1px solid #e5e7eb;
+      vertical-align: middle;
     }
     th a {
       color: inherit;
@@ -192,6 +258,27 @@ $sortLabel = $sortLabels[$sortParam] ?? $sortLabels['created_at'];
       font-size: 0.85rem;
       opacity: 0.85;
     }
+    .inline-form { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; }
+    .table-display { display: inline-block; padding: 4px 8px; border-radius: 8px; background: #eef2ff; border: 1px solid #c7d2fe; min-width: 110px; }
+    .table-input { width: 100%; padding: 6px 8px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 0.9rem; min-width: 120px; display: none; }
+    .save-btn, .edit-btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .save-btn { background: #1d4ed8; color: #fff; display: none; }
+    .save-btn:hover { background: #153ea5; }
+    .edit-btn { background: #475569; color: #fff; }
+    .edit-btn:hover { background: #1d4ed8; }
+    tr.editing .table-display { display: none; }
+    tr.editing .table-input { display: inline-block; }
+    tr.editing .save-btn { display: inline-flex; }
     tbody tr:nth-child(even) { background: #f9fafb; }
     .empty-state {
       text-align: center;
@@ -237,6 +324,7 @@ $sortLabel = $sortLabels[$sortParam] ?? $sortLabels['created_at'];
       cursor: not-allowed;
       pointer-events: none;
     }
+    th:last-child, td:last-child { width: 160px; }
     @media (max-width: 640px) {
       .card { padding: 16px; }
       table { min-width: 100%; }
@@ -248,6 +336,9 @@ $sortLabel = $sortLabels[$sortParam] ?? $sortLabels['created_at'];
   <?php include __DIR__ . '/partials/nav.php'; ?>
   <main class="container">
     <h1>Student Registrations</h1>
+    <?php if (!empty($flashMessage)): ?>
+      <div class="flash"><?= e($flashMessage) ?></div>
+    <?php endif; ?>
     <p class="meta">
       Showing <?= e($pageCount) ?> of <?= e($totalRows) ?> registration<?= $totalRows === 1 ? '' : 's' ?>
       <?= $totalRows ? '· ' . e($rangeStart) . '–' . e($rangeEnd) : '' ?>
@@ -295,6 +386,30 @@ $sortLabel = $sortLabels[$sortParam] ?? $sortLabels['created_at'];
                 </a>
               </th>
               <th scope="col">
+                <a href="?<?= e($buildQuery(['sort' => 'stage', 'dir' => $toggleDir('stage'), 'page' => 1])) ?>">
+                  Stage
+                  <?php if ($sortParam === 'stage'): ?>
+                    <span class="sort-indicator"><?= $dirParam === 'asc' ? '▲' : '▼' ?></span>
+                  <?php endif; ?>
+                </a>
+              </th>
+              <th scope="col">
+                <a href="?<?= e($buildQuery(['sort' => 'discount', 'dir' => $toggleDir('discount'), 'page' => 1])) ?>">
+                  Discount
+                  <?php if ($sortParam === 'discount'): ?>
+                    <span class="sort-indicator"><?= $dirParam === 'asc' ? '▲' : '▼' ?></span>
+                  <?php endif; ?>
+                </a>
+              </th>
+              <th scope="col">
+                <a href="?<?= e($buildQuery(['sort' => 'reference', 'dir' => $toggleDir('reference'), 'page' => 1])) ?>">
+                  Reference
+                  <?php if ($sortParam === 'reference'): ?>
+                    <span class="sort-indicator"><?= $dirParam === 'asc' ? '▲' : '▼' ?></span>
+                  <?php endif; ?>
+                </a>
+              </th>
+              <th scope="col">
                 <a href="?<?= e($buildQuery(['sort' => 'created_at', 'dir' => $toggleDir('created_at'), 'page' => 1])) ?>">
                   Registered On
                   <?php if ($sortParam === 'created_at'): ?>
@@ -302,15 +417,50 @@ $sortLabel = $sortLabels[$sortParam] ?? $sortLabels['created_at'];
                   <?php endif; ?>
                 </a>
               </th>
+              <th scope="col" style="text-align:right; min-width:110px;">Save</th>
             </tr>
           </thead>
           <tbody>
             <?php foreach ($rows as $index => $row): ?>
+              <?php $formId = 'update-' . (int)$row['id']; ?>
               <tr>
-                <td><?= e($index + 1) ?></td>
+                <td><?= e($index + 1 + $offset) ?></td>
                 <td><?= e($row['full_name']) ?></td>
                 <td><?= e($row['mobile']) ?></td>
+                <td>
+                  <span class="table-display"><?= e($row['stage'] ?? 'NIL') ?></span>
+                  <select name="stage" class="table-input" form="<?= e($formId) ?>">
+                    <?php foreach ($stageOptions as $option): ?>
+                      <option value="<?= e($option) ?>" <?= ($row['stage'] ?? 'NIL') === $option ? 'selected' : '' ?>><?= e($option) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </td>
+                <td>
+                  <span class="table-display"><?= e($row['discount'] ?? 'NIL') ?></span>
+                  <select name="discount" class="table-input" form="<?= e($formId) ?>">
+                    <?php foreach ($discountOptions as $option): ?>
+                      <option value="<?= e($option) ?>" <?= ($row['discount'] ?? 'NIL') === $option ? 'selected' : '' ?>><?= e($option) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </td>
+                <td>
+                  <span class="table-display"><?= e($row['reference'] ?? 'NIL') ?></span>
+                  <select name="reference" class="table-input" form="<?= e($formId) ?>">
+                    <?php foreach ($referenceOptions as $option): ?>
+                      <option value="<?= e($option) ?>" <?= ($row['reference'] ?? 'NIL') === $option ? 'selected' : '' ?>><?= e($option) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </td>
                 <td><?= e(date('d M Y, h:i A', strtotime($row['created_at']))) ?></td>
+                <td style="text-align:right;">
+                  <form id="<?= e($formId) ?>" method="post" class="inline-form" data-row="<?= e($row['id']) ?>">
+                    <input type="hidden" name="action" value="update_stage">
+                    <input type="hidden" name="id" value="<?= e($row['id']) ?>">
+                    <input type="hidden" name="name" value="<?= e($row['full_name']) ?>">
+                    <button type="button" class="edit-btn" aria-label="Edit row">✎ Edit</button>
+                    <button type="submit" class="save-btn">Save</button>
+                  </form>
+                </td>
               </tr>
             <?php endforeach; ?>
           </tbody>
@@ -335,6 +485,26 @@ $sortLabel = $sortLabels[$sortParam] ?? $sortLabels['created_at'];
       <?php endif; ?>
     </div>
   </main>
+
+  <script>
+    document.querySelectorAll('.inline-form').forEach(form => {
+      const editBtn = form.querySelector('.edit-btn');
+      const saveBtn = form.querySelector('.save-btn');
+      const row = form.closest('tr');
+      const inputs = row.querySelectorAll('.table-input[form="' + form.id + '"]');
+      if (editBtn) {
+        editBtn.addEventListener('click', () => {
+          row.classList.add('editing');
+          saveBtn.style.display = 'inline-flex';
+          editBtn.style.display = 'none';
+          inputs.forEach(input => {
+            input.style.display = 'inline-block';
+          });
+          if (inputs.length) { inputs[0].focus(); }
+        });
+      }
+    });
+  </script>
 
   <?php include __DIR__ . '/partials/footer.php'; ?>
 </body>
