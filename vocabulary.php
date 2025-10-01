@@ -113,6 +113,7 @@ try {
       .marathi { font-size: 1.05rem; }
       .pager a { font-size: 0.95rem; padding: 8px 12px; }
     }
+    
     @media (max-width: 480px) { .word { font-size: 1.6rem; } .container { padding: 4px; } }
   </style>
 </head>
@@ -123,7 +124,7 @@ try {
     <section class="card">
       <div class="card-title"><?= htmlspecialchars($cardTitle) ?></div>
       <div class="header">
-        <h1 class="word"><?= e($word) ?></h1>
+        <h1 class="word" aria-live="polite"><?= e($word) ?></h1>
         <div class="date-chip">📅 <?= e($date) ?></div>
       </div>
       <?php if ($marathi): ?>

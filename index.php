@@ -51,6 +51,15 @@
     .menu a:hover, .menu button:hover {
       background: #0056b3;
     }
+    .menu a.vocab-link {
+      background: linear-gradient(135deg, #f97316, #ef4444);
+      box-shadow: 0 10px 20px rgba(239, 68, 68, 0.35);
+    }
+    .menu a.vocab-link:hover {
+      transform: translateY(-2px);
+      background: linear-gradient(135deg, #fb923c, #f87171);
+      box-shadow: 0 14px 24px rgba(249, 115, 22, 0.35);
+    }
     #installBtn {
       display: none; /* Hidden until install available */
       background: #28a745;
@@ -66,7 +75,7 @@
     <div class="container">
     <h1>📘 Vocabulary App</h1>
     <div class="menu">
-      <a href="vocabulary.php">📖 Vocabulary</a>
+      <a class="vocab-link" href="vocabulary.php">📖 Vocabulary</a>
       <a href="register.php">📝 Register</a>
       <a href="about.php">ℹ️ About Class</a>
       <button id="installBtn">📲 Install App</button>
