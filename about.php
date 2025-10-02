@@ -43,6 +43,12 @@
   <div class="content">
     <h2>About the Class</h2>
     <p>This class helps students improve their English vocabulary by learning one new word every day.</p>
+    <p style="background:#eef2ff; border-left:4px solid #3b82f6; padding:12px 16px; border-radius:10px; font-weight:600; color:#1e3a8a;">
+      <span style="display:block; font-size:1.05rem; margin-bottom:4px;">📍 Address</span>
+      Ground Floor, Mahavir Market,<br>
+      Bhogale Rd,<br>
+      Chiplun - 415605
+    </p>
     <p>Features:</p>
     <ul>
       <li>Daily vocabulary updates</li>

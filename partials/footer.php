@@ -43,8 +43,7 @@
 
 <footer class="site-footer" role="contentinfo">
   <div class="site-footer__inner">
-    <p class="site-footer__heading">3S English Academy</p>
+    <p class="site-footer__heading">3S English Academy <span style="font-weight:400; font-size:0.95rem; color:#facc15;">(Below LIC Office, Bhogale Rd, Chiplun)</span></p>
     <p class="site-footer__contact">Contact: <a href="tel:+918591388500">+91 85913 88500</a></p>
   </div>
 </footer>
-
