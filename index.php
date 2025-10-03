@@ -82,7 +82,7 @@
     <div class="container">
     <h1>📘 Vocabulary App</h1>
     <div class="menu">
-      <a class="vocab-link" href="vocabulary.php">📖 Vocabulary</a>
+      <a class="vocab-link" href="vocabulary.php">📖 Today's Vocabulary</a>
       <a href="register.php">📝 Register</a>
       <a href="about.php">ℹ️ About Class</a>
       <a href="tel:+918591388500"><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l1.99-1.99a1 1 0 011.01-.24c1.12.37 2.33.57 3.59.57a1 1 0 011 1V21a1 1 0 01-1 1C12.95 22 2 11.05 2 4a1 1 0 011-1h3.37a1 1 0 011 1c0 1.26.2 2.47.57 3.59a1 1 0 01-.24 1.01l-1.99 1.99z"/></svg></span>85913 88500</a>
