@@ -98,8 +98,24 @@ try {
     .container { width: 100%; max-width: 760px; margin: 0 auto; padding: 8px; }
     .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; box-shadow: 0 6px 18px rgba(0,0,0,0.05); padding: 24px; text-align: left; }
     .card-title { margin: 0 0 8px; font-weight: 700; color: #007BFF; font-size: 1.1rem; }
-    .header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+    .header { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .word-group { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .word { font-size: 2.5rem; line-height: 1.1; margin: 0; word-wrap: break-word; color: #111827; }
+    .sound-btn {
+      border: none;
+      background: #eef2ff;
+      color: #1d4ed8;
+      border-radius: 50%;
+      width: 42px;
+      height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .sound-btn:hover { background: #dbeafe; transform: translateY(-1px); }
+    .sound-btn svg { width: 20px; height: 20px; fill: currentColor; }
     .date-chip { font-size: 0.95rem; color: #1f2937; background: #eef2ff; border: 1px solid #c7d2fe; padding: 6px 10px; border-radius: 999px; }
     .marathi { color: #1f2937; font-size: 1.15rem; margin-top: 12px; }
     .example { color: #374151; font-style: italic; margin-top: 14px; line-height: 1.6; }
@@ -124,7 +140,12 @@ try {
     <section class="card">
       <div class="card-title"><?= htmlspecialchars($cardTitle) ?></div>
       <div class="header">
-        <h1 class="word" aria-live="polite"><?= e($word) ?></h1>
+        <div class="word-group">
+          <h1 class="word" aria-live="polite"><?= e($word) ?></h1>
+          <button type="button" class="sound-btn" data-text="<?= htmlspecialchars($word, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" aria-label="Play vocabulary pronunciation">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 9v6h3l4 4V5l-4 4H5zm11.5 3a2.5 2.5 0 00-1.5-2.292v4.584A2.5 2.5 0 0016.5 12zm-1.5-6.708v1.684a4.5 4.5 0 010 8.048v1.684A6.5 6.5 0 0018.5 12a6.5 6.5 0 00-3.5-6.708z"/></svg>
+          </button>
+        </div>
         <div class="date-chip">📅 <?= e($date) ?></div>
       </div>
       <?php if ($marathi): ?>
@@ -148,7 +169,12 @@ try {
       <div class="card-title"><?= htmlspecialchars($idiomTitle) ?></div>
       <?php if ($idiom): ?>
         <div class="header" style="justify-content: space-between; align-items: center;">
-          <h2 class="word"><?= e($idiom) ?></h2>
+          <div class="word-group">
+            <h2 class="word"><?= e($idiom) ?></h2>
+            <button type="button" class="sound-btn" data-text="<?= htmlspecialchars($idiom, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" aria-label="Play idiom pronunciation">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 9v6h3l4 4V5l-4 4H5zm11.5 3a2.5 2.5 0 00-1.5-2.292v4.584A2.5 2.5 0 0016.5 12zm-1.5-6.708v1.684a4.5 4.5 0 010 8.048v1.684A6.5 6.5 0 0018.5 12a6.5 6.5 0 00-3.5-6.708z"/></svg>
+            </button>
+          </div>
           <div class="date-chip">📅 <?= e($date) ?></div>
         </div>
         <?php if ($idiomMarathi): ?>
@@ -166,6 +192,33 @@ try {
     </section>
     </div>
   </main>
+
+  <script>
+    (function(){
+      if (!('speechSynthesis' in window)) {
+        document.querySelectorAll('.sound-btn').forEach(btn => btn.style.display = 'none');
+        return;
+      }
+      const synth = window.speechSynthesis;
+      let speaking = false;
+      document.querySelectorAll('.sound-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const text = btn.getAttribute('data-text') || '';
+          if (!text.trim()) return;
+          if (speaking && synth.cancel) {
+            synth.cancel();
+            speaking = false;
+          }
+          const utter = new SpeechSynthesisUtterance(text);
+          utter.lang = 'en-US';
+          utter.rate = 0.95;
+          utter.onstart = () => speaking = true;
+          utter.onend = utter.onerror = () => speaking = false;
+          synth.speak(utter);
+        });
+      });
+    })();
+  </script>
 
   <?php include __DIR__ . '/partials/footer.php'; ?>
 </body>
