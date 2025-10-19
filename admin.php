@@ -21,6 +21,73 @@ if (empty($_SESSION['is_admin'])) {
 
 require 'db.php';
 
+try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS everyday_items (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        category VARCHAR(100) NOT NULL,
+        name VARCHAR(150) NOT NULL,
+        marathi_translation VARCHAR(150) NULL,
+        image_url VARCHAR(255) NULL,
+        entry_date DATE NOT NULL UNIQUE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+} catch (Throwable $e) { /* ignore */ }
+
+try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS content_settings (
+        id TINYINT UNSIGNED NOT NULL PRIMARY KEY DEFAULT 1,
+        show_vocabulary TINYINT(1) NOT NULL DEFAULT 1,
+        show_idiom TINYINT(1) NOT NULL DEFAULT 1,
+        show_everyday TINYINT(1) NOT NULL DEFAULT 1,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+    $pdo->exec("INSERT IGNORE INTO content_settings (id) VALUES (1)");
+} catch (Throwable $e) { /* ignore */ }
+
+// Align legacy columns with simplified structure
+try {
+    $col = $pdo->query("SHOW COLUMNS FROM everyday_items LIKE 'marathi_translation'");
+    if ($col->rowCount() === 0) {
+        $pdo->exec("ALTER TABLE everyday_items ADD COLUMN marathi_translation VARCHAR(150) NULL");
+    }
+} catch (Throwable $e) { /* ignore */ }
+try {
+    $col = $pdo->query("SHOW COLUMNS FROM everyday_items LIKE 'marathi_name'");
+    if ($col->rowCount() > 0) {
+        $pdo->exec("ALTER TABLE everyday_items CHANGE marathi_name marathi_translation VARCHAR(150) NULL");
+    }
+} catch (Throwable $e) { /* ignore */ }
+try {
+    $col = $pdo->query("SHOW COLUMNS FROM everyday_items LIKE 'description'");
+    if ($col->rowCount() > 0) {
+        $pdo->exec("ALTER TABLE everyday_items DROP COLUMN description");
+    }
+} catch (Throwable $e) { /* ignore */ }
+try {
+    $col = $pdo->query("SHOW COLUMNS FROM everyday_items LIKE 'created_at'");
+    if ($col->rowCount() > 0) {
+        $pdo->exec("ALTER TABLE everyday_items DROP COLUMN created_at");
+    }
+} catch (Throwable $e) { /* ignore */ }
+
+$sanitize = static fn($value) => trim((string)$value);
+$message_everyday = '';
+$bulk_message_vocab = '';
+$bulk_message_idiom = '';
+$bulk_message_everyday = '';
+$message_settings = '';
+$visibilitySettings = [
+    'show_vocabulary' => 1,
+    'show_idiom' => 1,
+    'show_everyday' => 1
+];
+try {
+    $stmt = $pdo->query("SELECT show_vocabulary, show_idiom, show_everyday FROM content_settings WHERE id = 1 LIMIT 1");
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($row) {
+        $visibilitySettings = array_merge($visibilitySettings, array_intersect_key($row, $visibilitySettings));
+    }
+} catch (Throwable $e) { /* ignore */ }
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $today = date("Y-m-d");
@@ -64,13 +131,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute(['idiom' => $idiom, 'marathi' => $imarathi, 'example' => $iexample, 'entry_date' => $today]);
             $message_idiom = "✅ Today's idiom saved!";
         }
+    } elseif ($type === 'everyday') {
+        $allowedCategories = ['Vegetables', 'Fruits', 'Kitchen Utensils', 'Living Room Decor'];
+        $category = $sanitize($_POST['category'] ?? 'Vegetables');
+        if (!in_array($category, $allowedCategories, true)) {
+            $category = 'Vegetables';
+        }
+        $itemName = $sanitize($_POST['item_name'] ?? '');
+        $itemMarathi = $sanitize($_POST['item_marathi'] ?? '');
+        $imageUrl = $sanitize($_POST['image_url'] ?? '');
+
+        if ($itemName !== '') {
+            $stmt = $pdo->prepare("INSERT INTO everyday_items (category, name, marathi_translation, image_url, entry_date)
+                                   VALUES (:category, :name, :marathi, :image_url, :entry_date)
+                                   ON DUPLICATE KEY UPDATE
+                                     category = VALUES(category),
+                                     name = VALUES(name),
+                                     marathi_translation = VALUES(marathi_translation),
+                                     image_url = VALUES(image_url)");
+            $stmt->execute([
+                ':category' => $category,
+                ':name' => $itemName,
+                ':marathi' => $itemMarathi !== '' ? $itemMarathi : null,
+                ':image_url' => $imageUrl !== '' ? $imageUrl : null,
+                ':entry_date' => $today
+            ]);
+            $message_everyday = "✅ Daily things vocabulary saved!";
+        } else {
+            $message_everyday = "⚠️ Please enter an item name.";
+        }
+    }
+
+    // Toggle visibility of sections
+    elseif ($type === 'visibility') {
+        $showVocab = isset($_POST['show_vocabulary']) ? 1 : 0;
+        $showIdiom = isset($_POST['show_idiom']) ? 1 : 0;
+        $showEveryday = isset($_POST['show_everyday']) ? 1 : 0;
+        try {
+            $stmt = $pdo->prepare("UPDATE content_settings SET show_vocabulary = :sv, show_idiom = :si, show_everyday = :se WHERE id = 1");
+            $stmt->execute([
+                ':sv' => $showVocab,
+                ':si' => $showIdiom,
+                ':se' => $showEveryday
+            ]);
+            $visibilitySettings['show_vocabulary'] = $showVocab;
+            $visibilitySettings['show_idiom'] = $showIdiom;
+            $visibilitySettings['show_everyday'] = $showEveryday;
+            $message_settings = "✅ Display settings updated.";
+        } catch (Throwable $e) {
+            $message_settings = "❌ Unable to update display settings.";
+        }
     }
 
     // Bulk CSV upload (exported from Excel)
-    elseif ($type === 'bulk_vocab' || $type === 'bulk_idiom') {
-        $forIdioms = ($type === 'bulk_idiom');
-        $keyName = $forIdioms ? 'idiom' : 'word';
-        $table = $forIdioms ? 'idioms' : 'vocabulary';
+    elseif ($type === 'bulk_vocab' || $type === 'bulk_idiom' || $type === 'bulk_everyday') {
+        $forIdioms = $type === 'bulk_idiom';
+        $forEveryday = $type === 'bulk_everyday';
+        $keyName = $forIdioms ? 'idiom' : ($forEveryday ? 'name' : 'word');
+        $table = $forIdioms ? 'idioms' : ($forEveryday ? 'everyday_items' : 'vocabulary');
 
         // Ensure destination table/columns exist
         if ($forIdioms) {
@@ -83,12 +201,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     entry_date DATE NOT NULL UNIQUE
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
             } catch (Throwable $e) { }
+        } elseif ($forEveryday) {
+            try {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS everyday_items (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    category VARCHAR(100) NOT NULL,
+                    name VARCHAR(150) NOT NULL,
+                    marathi_translation VARCHAR(150) NULL,
+                    image_url VARCHAR(255) NULL,
+                    entry_date DATE NOT NULL UNIQUE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+            } catch (Throwable $e) { }
         } else {
             try { $col = $pdo->query("SHOW COLUMNS FROM vocabulary LIKE 'marathi_translation'"); if ($col->rowCount() === 0) { $pdo->exec("ALTER TABLE vocabulary ADD COLUMN marathi_translation VARCHAR(255) NULL"); } } catch (Throwable $e) { }
             try { $col = $pdo->query("SHOW COLUMNS FROM vocabulary LIKE 'example'"); if ($col->rowCount() === 0) { $pdo->exec("ALTER TABLE vocabulary ADD COLUMN example TEXT NULL"); } } catch (Throwable $e) { }
         }
 
-        $summaryVar = $forIdioms ? 'bulk_message_idiom' : 'bulk_message_vocab';
+        $summaryVar = $forIdioms ? 'bulk_message_idiom' : ($forEveryday ? 'bulk_message_everyday' : 'bulk_message_vocab');
         $$summaryVar = '';
 
         if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
@@ -115,6 +244,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $map[$norm] = $i;
                     }
                     $required = ['entry_date', $keyName];
+                    if ($forEveryday) {
+                        $required[] = 'category';
+                    }
                     foreach ($required as $req) {
                         if (!array_key_exists($req, $map)) {
                             $$summaryVar = '❌ Missing required column: ' . $req;
@@ -138,7 +270,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $val = $get($keyName);
                             $mar = $get('marathi_translation');
                             $ex = $get('example');
+                            $cat = $get('category');
+                            $img = $get('image_url');
                             if ($val === '' || $dateRaw === '') { $skipped++; continue; }
+                            if ($forEveryday) {
+                                if ($cat === '') { $skipped++; continue; }
+                                $catKey = preg_replace('/[^a-z]+/', '', strtolower($cat));
+                                $allowedCatMap = [
+                                    'vegetables' => 'Vegetables',
+                                    'fruits' => 'Fruits',
+                                    'kitchenutensils' => 'Kitchen Utensils',
+                                    'livingroomdecor' => 'Living Room Decor'
+                                ];
+                                if (!isset($allowedCatMap[$catKey])) {
+                                    $skipped++;
+                                    continue;
+                                }
+                                $cat = $allowedCatMap[$catKey];
+                            }
 
                             // Normalize date to Y-m-d (supports common Excel exports)
                             $date = false;
@@ -155,13 +304,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $stmt = $pdo->prepare("INSERT INTO idioms (idiom, marathi_translation, example, entry_date)
                                                         VALUES (:v, :m, :e, :d)
                                                         ON DUPLICATE KEY UPDATE idiom = :v, marathi_translation = :m, example = :e");
+                            } elseif ($forEveryday) {
+                                $stmt = $pdo->prepare("INSERT INTO everyday_items (category, name, marathi_translation, image_url, entry_date)
+                                                        VALUES (:c, :v, :m, :i, :d)
+                                                        ON DUPLICATE KEY UPDATE
+                                                            category = VALUES(category),
+                                                            name = VALUES(name),
+                                                            marathi_translation = VALUES(marathi_translation),
+                                                            image_url = VALUES(image_url)");
                             } else {
                                 $stmt = $pdo->prepare("INSERT INTO vocabulary (word, marathi_translation, example, entry_date)
                                                         VALUES (:v, :m, :e, :d)
                                                         ON DUPLICATE KEY UPDATE word = :v, marathi_translation = :m, example = :e");
                             }
                             try {
-                                $stmt->execute([':v' => $val, ':m' => $mar, ':e' => $ex, ':d' => $date]);
+                                if ($forEveryday) {
+                                    $stmt->execute([
+                                        ':c' => $cat,
+                                        ':v' => $val,
+                                        ':m' => $mar !== '' ? $mar : null,
+                                        ':i' => $img !== '' ? $img : null,
+                                        ':d' => $date
+                                    ]);
+                                } else {
+                                    $stmt->execute([':v' => $val, ':m' => $mar, ':e' => $ex, ':d' => $date]);
+                                }
                                 $count++;
                             } catch (PDOException $e) {
                                 // Duplicate means updated
@@ -253,7 +420,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       border: 1px solid #ccc; 
       border-radius: 8px;
     }
+    .card select {
+      padding: 10px;
+      font-size: 16px;
+      width: 100%;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: #fff;
+    }
     .note { font-size: 0.9rem; color: #4b5563; text-align: left; }
+    .toggle-list {
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .toggle-list label {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+      color: #1f2937;
+    }
+    .toggle-list input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+    }
     .card textarea { min-height: 100px; resize: vertical; }
     .card button {
       padding: 10px; 
@@ -313,13 +507,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <div class="card">
+      <h2>Daily Things Vocabulary</h2>
+      <?php if (!empty($message_everyday)) echo "<div class='msg'>$message_everyday</div>"; ?>
+      <form method="POST">
+        <input type="hidden" name="type" value="everyday">
+        <select name="category" required>
+          <option value="Vegetables">Vegetables</option>
+          <option value="Fruits">Fruits</option>
+          <option value="Kitchen Utensils">Kitchen Utensils</option>
+          <option value="Living Room Decor">Living Room Decor</option>
+        </select>
+        <input type="text" name="item_name" placeholder="Item name (e.g., Spinach)" required>
+        <input type="text" name="item_marathi" placeholder="Marathi translation (optional)">
+        <input type="url" name="image_url" placeholder="Image URL (optional)">
+        <button type="submit">Add Daily Item</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Display Settings</h2>
+      <?php if (!empty($message_settings)) echo "<div class='msg'>$message_settings</div>"; ?>
+      <form method="POST">
+        <input type="hidden" name="type" value="visibility">
+        <div class="toggle-list">
+          <label>
+            <input type="checkbox" name="show_vocabulary" value="1" <?= !empty($visibilitySettings['show_vocabulary']) ? 'checked' : '' ?>>
+            <span>Show Today's Word</span>
+          </label>
+          <label>
+            <input type="checkbox" name="show_idiom" value="1" <?= !empty($visibilitySettings['show_idiom']) ? 'checked' : '' ?>>
+            <span>Show Today's Idiom</span>
+          </label>
+          <label>
+            <input type="checkbox" name="show_everyday" value="1" <?= !empty($visibilitySettings['show_everyday']) ? 'checked' : '' ?>>
+            <span>Show Everyday Essentials</span>
+          </label>
+        </div>
+        <button type="submit">Save Display Settings</button>
+      </form>
+    </div>
+
+    <div class="card">
       <h2>Bulk Upload (CSV from Excel)</h2>
       <p class="note">Export from Excel as CSV (UTF‑8). Required columns:</p>
       <p class="note"><strong>Vocabulary:</strong> entry_date, word, marathi (or marathi_translation), example</p>
       <p class="note"><strong>Idioms:</strong> entry_date, idiom, marathi (or marathi_translation), example</p>
+      <p class="note"><strong>Everyday Essentials:</strong> entry_date, category, name, marathi (or marathi_translation), image_url</p>
       <p class="note">Need a starting point? Download templates:
         <a href="template-vocabulary.php">Vocabulary CSV template</a> ·
-        <a href="template-idioms.php">Idioms CSV template</a>
+        <a href="template-idioms.php">Idioms CSV template</a> ·
+        <a href="template-everyday.php">Everyday essentials CSV template</a>
       </p>
       <?php if (!empty($bulk_message_vocab)) echo "<div class='msg'>$bulk_message_vocab</div>"; ?>
       <form method="POST" enctype="multipart/form-data">
@@ -332,6 +569,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input type="hidden" name="type" value="bulk_idiom">
         <input type="file" name="csv_file" accept=".csv" required>
         <button type="submit">Upload Idioms CSV</button>
+      </form>
+      <?php if (!empty($bulk_message_everyday)) echo "<div class='msg'>$bulk_message_everyday</div>"; ?>
+      <form method="POST" enctype="multipart/form-data" style="margin-top:10px;">
+        <input type="hidden" name="type" value="bulk_everyday">
+        <input type="file" name="csv_file" accept=".csv" required>
+        <button type="submit">Upload Everyday Essentials CSV</button>
       </form>
     </div>
   </div>

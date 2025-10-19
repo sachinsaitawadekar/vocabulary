@@ -429,7 +429,7 @@ $sortLabel = $sortLabels[$sortParam] ?? $sortLabels['created_at'];
                 <td><?= e($row['mobile']) ?></td>
                 <td>
                   <span class="table-display"><?= e($row['stage'] ?? 'NIL') ?></span>
-                  <select name="stage" class="table-input" form="<?= e($formId) ?>">
+                  <select name="stage" class="table-input" form="<?= e($formId) ?>" disabled>
                     <?php foreach ($stageOptions as $option): ?>
                       <option value="<?= e($option) ?>" <?= ($row['stage'] ?? 'NIL') === $option ? 'selected' : '' ?>><?= e($option) ?></option>
                     <?php endforeach; ?>
@@ -437,7 +437,7 @@ $sortLabel = $sortLabels[$sortParam] ?? $sortLabels['created_at'];
                 </td>
                 <td>
                   <span class="table-display"><?= e($row['discount'] ?? 'NIL') ?></span>
-                  <select name="discount" class="table-input" form="<?= e($formId) ?>">
+                  <select name="discount" class="table-input" form="<?= e($formId) ?>" disabled>
                     <?php foreach ($discountOptions as $option): ?>
                       <option value="<?= e($option) ?>" <?= ($row['discount'] ?? 'NIL') === $option ? 'selected' : '' ?>><?= e($option) ?></option>
                     <?php endforeach; ?>
@@ -445,7 +445,7 @@ $sortLabel = $sortLabels[$sortParam] ?? $sortLabels['created_at'];
                 </td>
                 <td>
                   <span class="table-display"><?= e($row['reference'] ?? 'NIL') ?></span>
-                  <select name="reference" class="table-input" form="<?= e($formId) ?>">
+                  <select name="reference" class="table-input" form="<?= e($formId) ?>" disabled>
                     <?php foreach ($referenceOptions as $option): ?>
                       <option value="<?= e($option) ?>" <?= ($row['reference'] ?? 'NIL') === $option ? 'selected' : '' ?>><?= e($option) ?></option>
                     <?php endforeach; ?>
@@ -499,6 +499,8 @@ $sortLabel = $sortLabels[$sortParam] ?? $sortLabels['created_at'];
           editBtn.style.display = 'none';
           inputs.forEach(input => {
             input.style.display = 'inline-block';
+            input.disabled = false;
+            input.removeAttribute('disabled');
           });
           if (inputs.length) { inputs[0].focus(); }
         });
