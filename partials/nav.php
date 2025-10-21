@@ -68,6 +68,7 @@
     <a href="index.php">Home</a>
     <a href="vocabulary.php">Vocabulary</a>
     <a href="register.php">Register</a>
+    <a href="contest-register.php">Contest</a>
     <a href="about.php">About</a>
   </div>
   <script>

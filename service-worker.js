@@ -4,6 +4,8 @@ const urlsToCache = [
   "/index.php",       // landing home
   "/vocabulary.php",  // vocabulary page
   "/register.php",    // register page
+  "/contest-register.php",
+  "/contest-registration-success.php",
   "/about.php",       // about class page
   "/admin.php",       // admin page
   "/registration-success.php",

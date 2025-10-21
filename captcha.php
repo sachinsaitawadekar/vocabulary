@@ -9,10 +9,16 @@ $b = random_int(1, 9);
 $ans = $a + $b;
 $expr = sprintf('%d + %d = ?', $a, $b);
 
-if ($for === 'check') {
-  $_SESSION['captcha_check_answer'] = $ans;
-} else {
-  $_SESSION['captcha_register_answer'] = $ans;
+switch ($for) {
+  case 'check':
+    $_SESSION['captcha_check_answer'] = $ans;
+    break;
+  case 'contest':
+    $_SESSION['captcha_contest_answer'] = $ans;
+    break;
+  default:
+    $_SESSION['captcha_register_answer'] = $ans;
+    break;
 }
 
 $width = 220;
