@@ -6,6 +6,7 @@ const urlsToCache = [
   "/register.php",    // register page
   "/contest-register.php",
   "/contest-registration-success.php",
+  "/contest-registrations.php",
   "/about.php",       // about class page
   "/admin.php",       // admin page
   "/registration-success.php",

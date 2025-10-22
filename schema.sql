@@ -56,6 +56,8 @@ CREATE TABLE IF NOT EXISTS contest_registrations (
     participant_type VARCHAR(100) NOT NULL,
     mobile VARCHAR(20) NOT NULL,
     age TINYINT UNSIGNED NOT NULL,
+    contest_date DATE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uniq_contest_mobile (mobile)
+    UNIQUE KEY uniq_contest_mobile (mobile),
+    INDEX idx_contest_date (contest_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

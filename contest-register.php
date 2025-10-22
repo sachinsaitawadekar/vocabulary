@@ -16,14 +16,26 @@ if ($pdo instanceof PDO) {
       participant_type VARCHAR(100) NOT NULL,
       mobile VARCHAR(20) NOT NULL UNIQUE,
       age TINYINT UNSIGNED NOT NULL,
+      contest_date DATE NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE KEY uniq_contest_mobile (mobile)
+      UNIQUE KEY uniq_contest_mobile (mobile),
+      INDEX idx_contest_date (contest_date)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+  } catch (Throwable $e) { /* ignore */ }
+  try {
+    $col = $pdo->query("SHOW COLUMNS FROM contest_registrations LIKE 'contest_date'");
+    if ($col->rowCount() === 0) {
+      $pdo->exec("ALTER TABLE contest_registrations ADD COLUMN contest_date DATE NOT NULL DEFAULT '2025-11-01', ADD INDEX idx_contest_date (contest_date)");
+    }
   } catch (Throwable $e) { /* ignore */ }
 }
 
 $genderOptions = ['Male', 'Female', 'Other'];
-$participantOptions = ['Student', 'Parent', 'Professional', 'Other'];
+$participantOptions = ['Student', 'Parent', 'Professional', 'Individual', 'Other'];
+$contestDateOptions = [
+  '2025-11-01' => '01 November 2025',
+  '2025-11-02' => '02 November 2025'
+];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $name = trim($_POST['full_name'] ?? '');
@@ -31,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $participantType = trim($_POST['participant_type'] ?? '');
   $mobileRaw = preg_replace('/\D+/', '', $_POST['mobile'] ?? '');
   $age = (int)($_POST['age'] ?? 0);
+  $contestDate = $_POST['contest_date'] ?? '';
   $captcha = trim($_POST['captcha'] ?? '');
 
   if ($name === '') { $errors[] = 'Full name is required.'; }
@@ -38,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (!in_array($participantType, $participantOptions, true)) { $errors[] = 'Please choose a valid participant type.'; }
   if (!preg_match('/^\d{10}$/', $mobileRaw)) { $errors[] = 'Mobile number must be 10 digits.'; }
   if ($age < 5 || $age > 120) { $errors[] = 'Please enter a valid age (5-120).'; }
+  if (!array_key_exists($contestDate, $contestDateOptions)) { $errors[] = 'Please select a contest date.'; }
   if ($captcha === '' || (int)$captcha !== (int)($_SESSION['captcha_contest_answer'] ?? -1)) {
     $errors[] = 'Incorrect captcha answer.';
   }
@@ -46,13 +60,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mobileFull = '+91' . $mobileRaw;
     if ($pdo instanceof PDO) {
       try {
-        $stmt = $pdo->prepare('INSERT INTO contest_registrations (full_name, gender, participant_type, mobile, age) VALUES (:name, :gender, :type, :mobile, :age)');
+        $stmt = $pdo->prepare('INSERT INTO contest_registrations (full_name, gender, participant_type, mobile, age, contest_date) VALUES (:name, :gender, :type, :mobile, :age, :contest_date)');
         $stmt->execute([
           ':name' => $name,
           ':gender' => $gender,
           ':type' => $participantType,
           ':mobile' => $mobileFull,
-          ':age' => $age
+          ':age' => $age,
+          ':contest_date' => $contestDate
         ]);
         $createdAt = null;
         try {
@@ -66,6 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           'participant_type' => $participantType,
           'mobile' => $mobileFull,
           'age' => $age,
+          'contest_date' => $contestDate,
           'created_at' => $createdAt ?: date('Y-m-d H:i:s')
         ];
         header('Location: contest-registration-success.php');
@@ -84,6 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'participant_type' => $participantType,
         'mobile' => $mobileFull,
         'age' => $age,
+        'contest_date' => $contestDate,
         'created_at' => date('Y-m-d H:i:s')
       ];
       header('Location: contest-registration-success.php');
@@ -158,13 +175,26 @@ function e($value) {
     .errors { background: #fdecea; color: #b91c1c; border: 1px solid #fecaca; padding: 10px; border-radius: 8px; margin-bottom: 10px; }
     .errors div { margin-bottom: 4px; }
     .notice-card {
-      background: #e0f2fe;
+      display: grid;
+      gap: 10px;
       border-radius: 12px;
-      padding: 16px;
-      box-shadow: 0 4px 8px rgba(14, 116, 144, 0.1);
-      color: #0f172a;
       width: 100%;
       max-width: 460px;
+    }
+    .notice-box {
+      border-radius: 12px;
+      padding: 14px 16px;
+      box-shadow: 0 4px 8px rgba(14, 116, 144, 0.1);
+    }
+    .notice-box--en {
+      background: #e0f2fe;
+      color: #0f172a;
+      border: 1px solid #bfdbfe;
+    }
+    .notice-box--mr {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #facc15;
     }
     .prefix-row {
       display: flex;
@@ -185,8 +215,14 @@ function e($value) {
   <?php include __DIR__ . '/partials/nav.php'; ?>
   <main class="page-main">
     <div class="notice-card">
-      <strong style="font-size:1.1rem; display:block; margin-bottom:6px;">🎉 Contest Registration</strong>
-      Fill out the form below to participate. We will contact shortlisted participants using the provided mobile number.
+      <div class="notice-box notice-box--en">
+        <strong style="font-size:1.1rem; display:block; margin-bottom:6px;">🎉 Contest Registration</strong>
+        Fill out the form below to participate. We will contact shortlisted participants on WhatsApp at the number you provide.
+      </div>
+      <div class="notice-box notice-box--mr">
+        <strong style="font-size:1.1rem; display:block; margin-bottom:6px;">📲 स्पर्धा नोंदणी</strong>
+        स्पर्धेत सहभागी होण्यासाठी खालील फॉर्म भरा. निवडलेल्या सहभागीना आपण दिलेल्या मोबाइल क्रमांकावर WhatsApp द्वारे संपर्क केला जाईल.
+      </div>
     </div>
     <div class="card">
       <h2>Enter Contest</h2>
@@ -217,6 +253,15 @@ function e($value) {
             <option value="">Select option</option>
             <?php foreach ($participantOptions as $option): ?>
               <option value="<?= e($option) ?>" <?= ($option === ($_POST['participant_type'] ?? '')) ? 'selected' : '' ?>><?= e($option) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="field">
+          <label class="label" for="contest_date">Date you want to give contest</label>
+          <select id="contest_date" name="contest_date" required>
+            <option value="">Select date</option>
+            <?php foreach ($contestDateOptions as $value => $label): ?>
+              <option value="<?= e($value) ?>" <?= ($value === ($_POST['contest_date'] ?? '')) ? 'selected' : '' ?>><?= e($label) ?></option>
             <?php endforeach; ?>
           </select>
         </div>
@@ -254,8 +299,14 @@ function e($value) {
       const age = document.getElementById('age');
       if (age) {
         age.addEventListener('input', () => {
-          const val = age.value.replace(/\D+/g, '');
-          age.value = val === '' ? '' : Math.max(5, Math.min(120, parseInt(val, 10))).toString();
+          age.value = age.value.replace(/\D+/g, '').slice(0, 3);
+        });
+        age.addEventListener('blur', () => {
+          if (age.value === '') return;
+          let val = parseInt(age.value, 10);
+          if (Number.isNaN(val)) { age.value = ''; return; }
+          val = Math.max(5, Math.min(120, val));
+          age.value = String(val);
         });
       }
       const img = document.getElementById('captcha_img_contest');
