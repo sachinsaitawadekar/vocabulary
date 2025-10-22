@@ -38,9 +38,17 @@ try {
         show_vocabulary TINYINT(1) NOT NULL DEFAULT 1,
         show_idiom TINYINT(1) NOT NULL DEFAULT 1,
         show_everyday TINYINT(1) NOT NULL DEFAULT 1,
+        show_contest_cta TINYINT(1) NOT NULL DEFAULT 1,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
     $pdo->exec("INSERT IGNORE INTO content_settings (id) VALUES (1)");
+} catch (Throwable $e) { /* ignore */ }
+
+try {
+    $col = $pdo->query("SHOW COLUMNS FROM content_settings LIKE 'show_contest_cta'");
+    if ($col->rowCount() === 0) {
+        $pdo->exec("ALTER TABLE content_settings ADD COLUMN show_contest_cta TINYINT(1) NOT NULL DEFAULT 1");
+    }
 } catch (Throwable $e) { /* ignore */ }
 
 // Align legacy columns with simplified structure
@@ -78,10 +86,11 @@ $message_settings = '';
 $visibilitySettings = [
     'show_vocabulary' => 1,
     'show_idiom' => 1,
-    'show_everyday' => 1
+    'show_everyday' => 1,
+    'show_contest_cta' => 1
 ];
 try {
-    $stmt = $pdo->query("SELECT show_vocabulary, show_idiom, show_everyday FROM content_settings WHERE id = 1 LIMIT 1");
+    $stmt = $pdo->query("SELECT show_vocabulary, show_idiom, show_everyday, show_contest_cta FROM content_settings WHERE id = 1 LIMIT 1");
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($row) {
         $visibilitySettings = array_merge($visibilitySettings, array_intersect_key($row, $visibilitySettings));
@@ -167,16 +176,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $showVocab = isset($_POST['show_vocabulary']) ? 1 : 0;
         $showIdiom = isset($_POST['show_idiom']) ? 1 : 0;
         $showEveryday = isset($_POST['show_everyday']) ? 1 : 0;
+        $showContest = isset($_POST['show_contest_cta']) ? 1 : 0;
         try {
-            $stmt = $pdo->prepare("UPDATE content_settings SET show_vocabulary = :sv, show_idiom = :si, show_everyday = :se WHERE id = 1");
+            $stmt = $pdo->prepare("UPDATE content_settings SET show_vocabulary = :sv, show_idiom = :si, show_everyday = :se, show_contest_cta = :sc WHERE id = 1");
             $stmt->execute([
                 ':sv' => $showVocab,
                 ':si' => $showIdiom,
-                ':se' => $showEveryday
+                ':se' => $showEveryday,
+                ':sc' => $showContest
             ]);
             $visibilitySettings['show_vocabulary'] = $showVocab;
             $visibilitySettings['show_idiom'] = $showIdiom;
             $visibilitySettings['show_everyday'] = $showEveryday;
+            $visibilitySettings['show_contest_cta'] = $showContest;
             $message_settings = "✅ Display settings updated.";
         } catch (Throwable $e) {
             $message_settings = "❌ Unable to update display settings.";
@@ -541,6 +553,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <label>
             <input type="checkbox" name="show_everyday" value="1" <?= !empty($visibilitySettings['show_everyday']) ? 'checked' : '' ?>>
             <span>Show Everyday Essentials</span>
+          </label>
+          <label>
+            <input type="checkbox" name="show_contest_cta" value="1" <?= !empty($visibilitySettings['show_contest_cta']) ? 'checked' : '' ?>>
+            <span>Show Contest Button</span>
           </label>
         </div>
         <button type="submit">Save Display Settings</button>

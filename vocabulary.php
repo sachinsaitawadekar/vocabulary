@@ -10,10 +10,11 @@ if (!function_exists('e')) {
 $visibilitySettings = [
   'show_vocabulary' => 1,
   'show_idiom' => 1,
-  'show_everyday' => 1
+  'show_everyday' => 1,
+  'show_contest_cta' => 1
 ];
 try {
-  $stmtSettings = $pdo->query("SELECT show_vocabulary, show_idiom, show_everyday FROM content_settings WHERE id = 1 LIMIT 1");
+  $stmtSettings = $pdo->query("SELECT show_vocabulary, show_idiom, show_everyday, show_contest_cta FROM content_settings WHERE id = 1 LIMIT 1");
   $rowSettings = $stmtSettings->fetch();
   if ($rowSettings) {
     foreach ($visibilitySettings as $key => $default) {
@@ -173,6 +174,41 @@ if (!empty($visibilitySettings['show_everyday'])) {
     .pager { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
     .pager a { text-decoration: none; padding: 10px 14px; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb; color: #111827; transition: background 0.2s, border-color 0.2s; font-size: 1rem; }
     .pager a:hover { background: #eef2ff; border-color: #c7d2fe; }
+    .cta-bar {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 12px;
+    }
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #f97316, #ef4444);
+      color: #fff;
+      text-decoration: none;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 1rem;
+      box-shadow: 0 10px 20px rgba(239, 68, 68, 0.25);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .cta-btn.blink {
+      animation: pulseBlink 1.2s ease-in-out infinite;
+    }
+    .cta-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 24px rgba(249, 115, 22, 0.3);
+    }
+    .cta-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+    @keyframes pulseBlink {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.05); }
+    }
     .daily-wrap {
       display: grid;
       grid-template-columns: minmax(200px, 280px) minmax(0, 1fr);
@@ -236,6 +272,14 @@ if (!empty($visibilitySettings['show_everyday'])) {
   <?php include __DIR__ . '/partials/nav.php'; ?>
   <main class="page-main">
     <div class="container">
+    <?php if (!empty($visibilitySettings['show_contest_cta'])): ?>
+    <div class="cta-bar">
+      <a class="cta-btn blink" href="contest-register.php">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l2.39 4.84 5.34.78-3.86 3.76.91 5.31L12 14.77l-4.78 2.52.91-5.31-3.86-3.76 5.34-.78z"/></svg>
+        स्पर्धेत सहभागी व्हा
+      </a>
+    </div>
+    <?php endif; ?>
     <?php if (!empty($visibilitySettings['show_vocabulary'])): ?>
     <section class="card">
       <div class="card-title"><?= htmlspecialchars($cardTitle) ?></div>
