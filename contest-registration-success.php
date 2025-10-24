@@ -1,5 +1,7 @@
 <?php
 session_start();
+$tz = 'Asia/Kolkata';
+if (function_exists('date_default_timezone_set')) { date_default_timezone_set($tz); }
 $data = $_SESSION['contest_registration_success'] ?? null;
 if ($data) {
   unset($_SESSION['contest_registration_success']);

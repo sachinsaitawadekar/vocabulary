@@ -11,6 +11,7 @@ try {
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
     ]);
+    $pdo->exec("SET time_zone = '+05:30'");
 } catch (PDOException $e) {
     die("DB Connection failed: " . $e->getMessage());
 }
