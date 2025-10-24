@@ -51,6 +51,7 @@ $allowedSort = [
     'gender' => 'gender',
     'participant_type' => 'participant_type',
     'age' => 'age',
+    'location' => 'location',
     'mobile' => 'mobile',
     'contest_date' => 'contest_date',
     'created_at' => 'created_at'
@@ -60,6 +61,7 @@ $sortLabels = [
     'gender' => 'Gender',
     'participant_type' => 'Are you?',
     'age' => 'Age',
+    'location' => 'Location',
     'mobile' => 'Mobile',
     'contest_date' => 'Contest Date',
     'created_at' => 'Registered On'
@@ -86,7 +88,7 @@ $totalPages = $totalRows > 0 ? (int)ceil($totalRows / $perPage) : 1;
 if ($page > $totalPages) { $page = $totalPages; }
 $offset = ($page - 1) * $perPage;
 
-$stmt = $pdo->prepare("SELECT id, full_name, gender, participant_type, mobile, age, contest_date, created_at FROM contest_registrations ORDER BY {$sortColumn} {$direction} LIMIT :limit OFFSET :offset");
+$stmt = $pdo->prepare("SELECT id, full_name, gender, participant_type, mobile, age, location, contest_date, created_at FROM contest_registrations ORDER BY {$sortColumn} {$direction} LIMIT :limit OFFSET :offset");
 $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
@@ -342,6 +344,14 @@ $sortLabel = $sortLabels[$sortParam] ?? $sortLabels['created_at'];
                 </a>
               </th>
               <th scope="col">
+                <a href="?<?= e($buildQuery(['sort' => 'location', 'dir' => $toggleDir('location'), 'page' => 1])) ?>">
+                  Location
+                  <?php if ($sortParam === 'location'): ?>
+                    <span class="sort-indicator"><?= $dirParam === 'asc' ? '▲' : '▼' ?></span>
+                  <?php endif; ?>
+                </a>
+              </th>
+              <th scope="col">
                 <a href="?<?= e($buildQuery(['sort' => 'contest_date', 'dir' => $toggleDir('contest_date'), 'page' => 1])) ?>">
                   Contest Date
                   <?php if ($sortParam === 'contest_date'): ?>
@@ -375,6 +385,7 @@ $sortLabel = $sortLabels[$sortParam] ?? $sortLabels['created_at'];
                 <td><?= e($row['gender']) ?></td>
                 <td><?= e($row['participant_type']) ?></td>
                 <td><?= e($row['age']) ?></td>
+                <td><?= e($row['location']) ?></td>
                 <td><?= e(date('d F Y', strtotime($row['contest_date']))) ?></td>
                 <td><?= e($row['mobile']) ?></td>
                 <td><?= e(date('d M Y, h:i A', strtotime($row['created_at']))) ?></td>

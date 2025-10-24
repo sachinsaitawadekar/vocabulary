@@ -256,14 +256,20 @@ function e($value) {
         <div class="badge">🥳</div>
         <p class="subheading">Contest entry confirmed!</p>
         <p class="marathi-line">स्पर्धेसाठी तुमची नोंदणी यशस्वी झाली आहे!</p>
-        <p>Thank you<?= $data['name'] ? ' <strong>' . e($data['name']) . '</strong>' : '' ?>! Your contest seat has been locked in.</p>
-        <p class="marathi-line">धन्यवाद<?= $data['name'] ? ' <strong>' . e($data['name']) . '</strong>' : '' ?>! तुमची स्पर्धेसाठीची जागा निश्चित झाली आहे.</p>
+        <p>Thank you<?= $data['name'] ? ' <strong>' . e($data['name']) . '</strong>' : '' ?>! Registered successfully. Wait for WhatsApp confirmation.</p>
+        <p class="marathi-line">धन्यवाद<?= $data['name'] ? ' <strong>' . e($data['name']) . '</strong>' : '' ?>! नोंदणी यशस्वीरीत्या पूर्ण झाली आहे. WhatsApp द्वारे पुष्टीची प्रतीक्षा करा..</p>
         <div class="highlight">
           Watch for our WhatsApp update on <strong><?= e($data['mobile']) ?></strong> with the exact contest date &amp; time. Stay tuned!
         </div>
         <div class="highlight highlight-marathi">
           स्पर्धेची नेमकी तारीख व वेळ WhatsApp वर <strong><?= e($data['mobile']) ?></strong> या क्रमांकावर लवकरच कळवण्यात येईल. कृपया लक्ष ठेवा!
         </div>
+        <?php if (!empty($data['location'])): ?>
+          <div class="highlight" style="background:#f8fafc; color:#0f172a; border:1px solid #cbd5f5;">
+            Registered from: <strong><?= e($data['location']) ?></strong><br>
+            <span style="color:#1d4ed8;">📍 तुमचे ठिकाण: <strong><?= e($data['location']) ?></strong></span>
+          </div>
+        <?php endif; ?>
         <?php if ($contestDateLabel): ?>
           <div class="date-box">
             Your preferred contest date: <span><?= e($contestDateLabel) ?></span><br>
@@ -271,8 +277,6 @@ function e($value) {
           </div>
         <?php endif; ?>
         <p class="marathi-line">🎯 स्पर्धेसाठी नोंदणीबद्दल मनःपूर्वक आभार!</p>
-        <p>We’re thrilled to have you onboard. Get ready to showcase your best self.</p>
-        <p class="marathi-line">तुमच्या सहभागामुळे आम्ही उत्साहित आहोत. स्वतःचा सर्वोत्तम अवतार सादर करण्यासाठी तयार राहा.</p>
         <?php
           $ts = strtotime($data['created_at']);
           $formatted = $ts ? date('d M Y, h:i A', $ts) : e($data['created_at']);
@@ -294,7 +298,7 @@ function e($value) {
             <div class="step-icon">📅</div>
             <div class="step-body">
               <strong>Keep the slot free and polish your skills – the stage is set for you!</strong>
-              <small>तुमचा वेळ मोकळा ठेवा आणि कौशल्ये घासा – मंच तुमच्यासाठी सज्ज आहे!</small>
+              <small>वेळ मोकळी ठेवा, तयारीला लागा – मंच तुमच्यासाठी सज्ज आहे!</small>
             </div>
           </li>
           <li>

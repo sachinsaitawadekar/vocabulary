@@ -16,6 +16,7 @@ if ($pdo instanceof PDO) {
       participant_type VARCHAR(100) NOT NULL,
       mobile VARCHAR(20) NOT NULL UNIQUE,
       age TINYINT UNSIGNED NOT NULL,
+      location VARCHAR(150) NOT NULL,
       contest_date DATE NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       UNIQUE KEY uniq_contest_mobile (mobile),
@@ -26,6 +27,12 @@ if ($pdo instanceof PDO) {
     $col = $pdo->query("SHOW COLUMNS FROM contest_registrations LIKE 'contest_date'");
     if ($col->rowCount() === 0) {
       $pdo->exec("ALTER TABLE contest_registrations ADD COLUMN contest_date DATE NOT NULL DEFAULT '2025-11-01', ADD INDEX idx_contest_date (contest_date)");
+    }
+  } catch (Throwable $e) { /* ignore */ }
+  try {
+    $col = $pdo->query("SHOW COLUMNS FROM contest_registrations LIKE 'location'");
+    if ($col->rowCount() === 0) {
+      $pdo->exec("ALTER TABLE contest_registrations ADD COLUMN location VARCHAR(150) NOT NULL DEFAULT 'Chiplun'");
     }
   } catch (Throwable $e) { /* ignore */ }
 }
@@ -44,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $mobileRaw = preg_replace('/\D+/', '', $_POST['mobile'] ?? '');
   $age = (int)($_POST['age'] ?? 0);
   $contestDate = $_POST['contest_date'] ?? '';
+  $location = trim($_POST['location'] ?? '');
   $captcha = trim($_POST['captcha'] ?? '');
 
   if ($name === '') { $errors[] = 'Full name is required.'; }
@@ -52,6 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (!preg_match('/^\d{10}$/', $mobileRaw)) { $errors[] = 'Mobile number must be 10 digits.'; }
   if ($age < 5 || $age > 120) { $errors[] = 'Please enter a valid age (5-120).'; }
   if (!array_key_exists($contestDate, $contestDateOptions)) { $errors[] = 'Please select a contest date.'; }
+  if ($location === '') { $errors[] = 'Please let us know your location.'; }
   if ($captcha === '' || (int)$captcha !== (int)($_SESSION['captcha_contest_answer'] ?? -1)) {
     $errors[] = 'Incorrect captcha answer.';
   }
@@ -60,13 +69,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mobileFull = '+91' . $mobileRaw;
     if ($pdo instanceof PDO) {
       try {
-        $stmt = $pdo->prepare('INSERT INTO contest_registrations (full_name, gender, participant_type, mobile, age, contest_date) VALUES (:name, :gender, :type, :mobile, :age, :contest_date)');
+        $stmt = $pdo->prepare('INSERT INTO contest_registrations (full_name, gender, participant_type, mobile, age, location, contest_date) VALUES (:name, :gender, :type, :mobile, :age, :location, :contest_date)');
         $stmt->execute([
           ':name' => $name,
           ':gender' => $gender,
           ':type' => $participantType,
           ':mobile' => $mobileFull,
           ':age' => $age,
+          ':location' => $location,
           ':contest_date' => $contestDate
         ]);
         $createdAt = null;
@@ -81,6 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           'participant_type' => $participantType,
           'mobile' => $mobileFull,
           'age' => $age,
+          'location' => $location,
           'contest_date' => $contestDate,
           'created_at' => $createdAt ?: date('Y-m-d H:i:s')
         ];
@@ -100,6 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'participant_type' => $participantType,
         'mobile' => $mobileFull,
         'age' => $age,
+        'location' => $location,
         'contest_date' => $contestDate,
         'created_at' => date('Y-m-d H:i:s')
       ];
@@ -255,6 +267,10 @@ function e($value) {
               <option value="<?= e($option) ?>" <?= ($option === ($_POST['participant_type'] ?? '')) ? 'selected' : '' ?>><?= e($option) ?></option>
             <?php endforeach; ?>
           </select>
+        </div>
+        <div class="field">
+          <label class="label" for="location">You are from?</label>
+          <input id="location" name="location" type="text" required placeholder="City / Town" value="<?= e($_POST['location'] ?? '') ?>">
         </div>
         <div class="field">
           <label class="label" for="contest_date">Date you want to give contest</label>
