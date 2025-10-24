@@ -269,7 +269,7 @@ function e($value) {
           </select>
         </div>
         <div class="field">
-          <label class="label" for="location">You are from?</label>
+          <label class="label" for="location">You are from? (ठिकाण)</label>
           <input id="location" name="location" type="text" required placeholder="City / Town" value="<?= e($_POST['location'] ?? '') ?>">
         </div>
         <div class="field">
