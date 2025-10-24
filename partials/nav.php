@@ -67,7 +67,7 @@
   <div class="links" id="navLinks">
     <a href="index.php">Home</a>
     <a href="vocabulary.php">Vocabulary</a>
-    <a href="register.php">Register</a>
+    <?php /* <a href="register.php">Register</a> */ ?>
     <a href="contest-register.php">Contest</a>
     <a href="about.php">About</a>
   </div>
