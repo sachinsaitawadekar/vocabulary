@@ -42,8 +42,7 @@ if ($pdo instanceof PDO) {
 $genderOptions = ['Male', 'Female', 'Other'];
 $participantOptions = ['Student', 'Parent', 'Professional', 'Individual', 'Other'];
 $contestDateOptions = [
-  '2025-11-01' => '01 November 2025',
-  '2025-11-02' => '02 November 2025'
+  '2025-11-01' => '09 November 2025'
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
