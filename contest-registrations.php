@@ -40,7 +40,7 @@ try {
 try {
     $col = $pdo->query("SHOW COLUMNS FROM contest_registrations LIKE 'contest_date'");
     if ($col->rowCount() === 0) {
-        $pdo->exec("ALTER TABLE contest_registrations ADD COLUMN contest_date DATE NOT NULL DEFAULT '2025-11-01', ADD INDEX idx_contest_date (contest_date)");
+        $pdo->exec("ALTER TABLE contest_registrations ADD COLUMN contest_date DATE NOT NULL DEFAULT '2025-11-09', ADD INDEX idx_contest_date (contest_date)");
     }
 } catch (Throwable $e) { /* ignore */ }
 
