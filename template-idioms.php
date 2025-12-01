@@ -5,6 +5,6 @@ header('Content-Disposition: attachment; filename="idioms-template.csv"');
 echo "\xEF\xBB\xBF";
 $out = fopen('php://output', 'w');
 // Header row for idioms bulk upload
-fputcsv($out, ['entry_date', 'idiom', 'marathi', 'example'], ',', '"', '\\');
+fputcsv($out, ['entry_date', 'idiom', 'marathi', 'hindi', 'example'], ',', '"', '\\');
 fclose($out);
 exit;

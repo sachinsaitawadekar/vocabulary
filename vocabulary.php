@@ -37,17 +37,19 @@ if ($date > $today) { $date = $today; }
 // Fetch today/selected date's word with optional marathi + example
 $word = "No word set for this date!";
 $marathi = null;
+$hindi = null;
 $example = null;
 $prevDate = null;
 $nextDate = null;
 if (!empty($visibilitySettings['show_vocabulary'])) {
   try {
-    $stmt = $pdo->prepare("SELECT word, marathi_translation, example FROM vocabulary WHERE entry_date = :date");
+    $stmt = $pdo->prepare("SELECT word, marathi_translation, hindi_translation, example FROM vocabulary WHERE entry_date = :date");
     $stmt->execute(['date' => $date]);
     $row = $stmt->fetch();
     if ($row) {
       $word = $row['word'];
       $marathi = $row['marathi_translation'] ?? null;
+      $hindi = $row['hindi_translation'] ?? null;
       $example = $row['example'] ?? null;
     }
   } catch (Throwable $e) {
@@ -79,15 +81,16 @@ $idiomTitle = $isToday ? "Today's Idiom" : "Older Idiom";
 $dailyTitle = $isToday ? "Today's Everyday Essentials" : "Older Everyday Essentials";
 
 // Fetch idiom for the date if table exists
-$idiom = null; $idiomMarathi = null; $idiomExample = null;
+$idiom = null; $idiomMarathi = null; $idiomHindi = null; $idiomExample = null;
 if (!empty($visibilitySettings['show_idiom'])) {
   try {
-    $stmtI = $pdo->prepare("SELECT idiom, marathi_translation, example FROM idioms WHERE entry_date = :date");
+    $stmtI = $pdo->prepare("SELECT idiom, marathi_translation, hindi_translation, example FROM idioms WHERE entry_date = :date");
     $stmtI->execute(['date' => $date]);
     $rowI = $stmtI->fetch();
     if ($rowI) {
       $idiom = $rowI['idiom'];
       $idiomMarathi = $rowI['marathi_translation'] ?? null;
+      $idiomHindi = $rowI['hindi_translation'] ?? null;
       $idiomExample = $rowI['example'] ?? null;
     }
   } catch (Throwable $e) { /* table may not exist yet */ }
@@ -167,7 +170,8 @@ if (!empty($visibilitySettings['show_everyday'])) {
     .sound-btn:hover { background: #dbeafe; transform: translateY(-1px); }
     .sound-btn svg { width: 20px; height: 20px; fill: currentColor; }
     .date-chip { font-size: 0.95rem; color: #1f2937; background: #eef2ff; border: 1px solid #c7d2fe; padding: 6px 10px; border-radius: 999px; }
-    .marathi { color: #1f2937; font-size: 1.15rem; margin-top: 12px; }
+    .marathi { color: #1f2937; font-size: 1.05rem; margin-top: 8px; }
+    .hindi { color: #1f2937; font-size: 1.05rem; margin-top: 8px; }
     .example { color: #374151; font-style: italic; margin-top: 14px; line-height: 1.6; }
     .value-box { display: inline-block; padding: 6px 10px; margin-left: 8px; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb; color: #111827; }
     .divider { height: 1px; background: #f3f4f6; margin: 16px 0; border: 0; }
@@ -250,7 +254,7 @@ if (!empty($visibilitySettings['show_everyday'])) {
     }
     @media (max-width: 768px) {
       .word { font-size: 2rem; }
-      .marathi { font-size: 1.05rem; }
+      .marathi, .hindi { font-size: 1.05rem; }
       .pager a { font-size: 0.95rem; padding: 8px 12px; }
       .daily-wrap {
         grid-template-columns: 1fr;
@@ -293,7 +297,10 @@ if (!empty($visibilitySettings['show_everyday'])) {
         <div class="date-chip">📅 <?= e($date) ?></div>
       </div>
       <?php if ($marathi): ?>
-        <div class="marathi"><strong>अर्थ:</strong> <span class="value-box"><?= e($marathi) ?></span></div>
+        <div class="marathi"><strong>मराठी अर्थ:</strong> <span class="value-box"><?= e($marathi) ?></span></div>
+      <?php endif; ?>
+      <?php if ($hindi): ?>
+        <div class="hindi"><strong>हिंदी अर्थ:</strong> <span class="value-box"><?= e($hindi) ?></span></div>
       <?php endif; ?>
       <?php if ($example): ?>
         <div class="example"><strong>Sample Sentense:</strong> <span class="value-box">“<?= e($example) ?>”</span></div>
@@ -324,7 +331,10 @@ if (!empty($visibilitySettings['show_everyday'])) {
           <div class="date-chip">📅 <?= e($date) ?></div>
         </div>
         <?php if ($idiomMarathi): ?>
-          <div class="marathi"><strong>अर्थ:</strong> <span class="value-box"><?= e($idiomMarathi) ?></span></div>
+          <div class="marathi"><strong>मराठी अर्थ:</strong> <span class="value-box"><?= e($idiomMarathi) ?></span></div>
+        <?php endif; ?>
+        <?php if ($idiomHindi): ?>
+          <div class="hindi"><strong>हिंदी अर्थ:</strong> <span class="value-box"><?= e($idiomHindi) ?></span></div>
         <?php endif; ?>
         <?php if ($idiomExample): ?>
           <div class="example"><strong>Sample Sentense:</strong> <span class="value-box">“<?= e($idiomExample) ?>”</span></div>

@@ -2,6 +2,7 @@ CREATE TABLE vocabulary (
     id INT AUTO_INCREMENT PRIMARY KEY,
     word VARCHAR(255) NOT NULL,
     marathi_translation VARCHAR(255) NULL,
+    hindi_translation VARCHAR(255) NULL,
     example TEXT NULL,
     entry_date DATE NOT NULL UNIQUE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -10,6 +11,7 @@ CREATE TABLE IF NOT EXISTS idioms (
     id INT AUTO_INCREMENT PRIMARY KEY,
     idiom VARCHAR(255) NOT NULL,
     marathi_translation VARCHAR(255) NULL,
+    hindi_translation VARCHAR(255) NULL,
     example TEXT NULL,
     entry_date DATE NOT NULL UNIQUE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

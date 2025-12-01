@@ -5,6 +5,6 @@ header('Content-Disposition: attachment; filename="vocabulary-template.csv"');
 echo "\xEF\xBB\xBF";
 $out = fopen('php://output', 'w');
 // Header row for vocabulary bulk upload
-fputcsv($out, ['entry_date', 'word', 'marathi', 'example'], ',', '"', '\\');
+fputcsv($out, ['entry_date', 'word', 'marathi', 'hindi', 'example'], ',', '"', '\\');
 fclose($out);
 exit;

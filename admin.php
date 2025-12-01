@@ -105,17 +105,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($type === 'vocab') {
         $word = trim($_POST['word'] ?? '');
         $marathi = trim($_POST['marathi'] ?? '');
+        $hindi = trim($_POST['hindi'] ?? '');
         $example = trim($_POST['example'] ?? '');
 
-        // Ensure columns exist for Marathi and example (idempotent)
+        // Ensure columns exist for Marathi, Hindi and example (idempotent)
         try { $col = $pdo->query("SHOW COLUMNS FROM vocabulary LIKE 'marathi_translation'"); if ($col->rowCount() === 0) { $pdo->exec("ALTER TABLE vocabulary ADD COLUMN marathi_translation VARCHAR(255) NULL"); } } catch (Throwable $e) { }
+        try { $col = $pdo->query("SHOW COLUMNS FROM vocabulary LIKE 'hindi_translation'"); if ($col->rowCount() === 0) { $pdo->exec("ALTER TABLE vocabulary ADD COLUMN hindi_translation VARCHAR(255) NULL"); } } catch (Throwable $e) { }
         try { $col = $pdo->query("SHOW COLUMNS FROM vocabulary LIKE 'example'"); if ($col->rowCount() === 0) { $pdo->exec("ALTER TABLE vocabulary ADD COLUMN example TEXT NULL"); } } catch (Throwable $e) { }
 
         if ($word) {
-            $stmt = $pdo->prepare("INSERT INTO vocabulary (word, marathi_translation, example, entry_date)
-                                   VALUES (:word, :marathi, :example, :entry_date)
-                                   ON DUPLICATE KEY UPDATE word = :word, marathi_translation = :marathi, example = :example");
-            $stmt->execute(['word' => $word, 'marathi' => $marathi, 'example' => $example, 'entry_date' => $today]);
+            $stmt = $pdo->prepare("INSERT INTO vocabulary (word, marathi_translation, hindi_translation, example, entry_date)
+                                   VALUES (:word, :marathi, :hindi, :example, :entry_date)
+                                   ON DUPLICATE KEY UPDATE word = :word, marathi_translation = :marathi, hindi_translation = :hindi, example = :example");
+            $stmt->execute(['word' => $word, 'marathi' => $marathi, 'hindi' => $hindi, 'example' => $example, 'entry_date' => $today]);
             $message = "✅ Today's vocabulary saved!";
         }
     } elseif ($type === 'idiom') {
@@ -125,6 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 idiom VARCHAR(255) NOT NULL,
                 marathi_translation VARCHAR(255) NULL,
+                hindi_translation VARCHAR(255) NULL,
                 example TEXT NULL,
                 entry_date DATE NOT NULL UNIQUE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
@@ -132,12 +135,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $idiom = trim($_POST['idiom'] ?? '');
         $imarathi = trim($_POST['idiom_marathi'] ?? '');
+        $ihindi = trim($_POST['idiom_hindi'] ?? '');
         $iexample = trim($_POST['idiom_example'] ?? '');
         if ($idiom) {
-            $stmt = $pdo->prepare("INSERT INTO idioms (idiom, marathi_translation, example, entry_date)
-                                   VALUES (:idiom, :marathi, :example, :entry_date)
-                                   ON DUPLICATE KEY UPDATE idiom = :idiom, marathi_translation = :marathi, example = :example");
-            $stmt->execute(['idiom' => $idiom, 'marathi' => $imarathi, 'example' => $iexample, 'entry_date' => $today]);
+            try { $col = $pdo->query("SHOW COLUMNS FROM idioms LIKE 'hindi_translation'"); if ($col->rowCount() === 0) { $pdo->exec("ALTER TABLE idioms ADD COLUMN hindi_translation VARCHAR(255) NULL"); } } catch (Throwable $e) { }
+            $stmt = $pdo->prepare("INSERT INTO idioms (idiom, marathi_translation, hindi_translation, example, entry_date)
+                                   VALUES (:idiom, :marathi, :hindi, :example, :entry_date)
+                                   ON DUPLICATE KEY UPDATE idiom = :idiom, marathi_translation = :marathi, hindi_translation = :hindi, example = :example");
+            $stmt->execute(['idiom' => $idiom, 'marathi' => $imarathi, 'hindi' => $ihindi, 'example' => $iexample, 'entry_date' => $today]);
             $message_idiom = "✅ Today's idiom saved!";
         }
     } elseif ($type === 'everyday') {
@@ -253,6 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $norm = trim($norm, '_');
                         if ($norm === 'entrydate' || $norm === 'date') { $norm = 'entry_date'; }
                         if ($norm === 'marathi') { $norm = 'marathi_translation'; }
+                        if ($norm === 'hindi') { $norm = 'hindi_translation'; }
                         $map[$norm] = $i;
                     }
                     $required = ['entry_date', $keyName];
@@ -281,6 +287,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $dateRaw = $get('entry_date');
                             $val = $get($keyName);
                             $mar = $get('marathi_translation');
+                            $hin = $get('hindi_translation');
                             $ex = $get('example');
                             $cat = $get('category');
                             $img = $get('image_url');
@@ -313,9 +320,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             if (!$date) { $skipped++; continue; }
 
                             if ($forIdioms) {
-                                $stmt = $pdo->prepare("INSERT INTO idioms (idiom, marathi_translation, example, entry_date)
-                                                        VALUES (:v, :m, :e, :d)
-                                                        ON DUPLICATE KEY UPDATE idiom = :v, marathi_translation = :m, example = :e");
+                                $stmt = $pdo->prepare("INSERT INTO idioms (idiom, marathi_translation, hindi_translation, example, entry_date)
+                                                        VALUES (:v, :m, :h, :e, :d)
+                                                        ON DUPLICATE KEY UPDATE idiom = :v, marathi_translation = :m, hindi_translation = :h, example = :e");
                             } elseif ($forEveryday) {
                                 $stmt = $pdo->prepare("INSERT INTO everyday_items (category, name, marathi_translation, image_url, entry_date)
                                                         VALUES (:c, :v, :m, :i, :d)
@@ -325,9 +332,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                             marathi_translation = VALUES(marathi_translation),
                                                             image_url = VALUES(image_url)");
                             } else {
-                                $stmt = $pdo->prepare("INSERT INTO vocabulary (word, marathi_translation, example, entry_date)
-                                                        VALUES (:v, :m, :e, :d)
-                                                        ON DUPLICATE KEY UPDATE word = :v, marathi_translation = :m, example = :e");
+                                $stmt = $pdo->prepare("INSERT INTO vocabulary (word, marathi_translation, hindi_translation, example, entry_date)
+                                                        VALUES (:v, :m, :h, :e, :d)
+                                                        ON DUPLICATE KEY UPDATE word = :v, marathi_translation = :m, hindi_translation = :h, example = :e");
                             }
                             try {
                                 if ($forEveryday) {
@@ -339,7 +346,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         ':d' => $date
                                     ]);
                                 } else {
-                                    $stmt->execute([':v' => $val, ':m' => $mar, ':e' => $ex, ':d' => $date]);
+                                    $stmt->execute([
+                                        ':v' => $val,
+                                        ':m' => $mar !== '' ? $mar : null,
+                                        ':h' => $hin !== '' ? $hin : null,
+                                        ':e' => $ex !== '' ? $ex : null,
+                                        ':d' => $date
+                                    ]);
                                 }
                                 $count++;
                             } catch (PDOException $e) {
@@ -501,6 +514,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input type="hidden" name="type" value="vocab">
         <input type="text" name="word" placeholder="Enter today's word (English)" required>
         <input type="text" name="marathi" placeholder="Marathi translation (मराठी अर्थ)">
+        <input type="text" name="hindi" placeholder="Hindi meaning (हिंदी अर्थ)">
         <textarea name="example" placeholder="Example sentence (optional)"></textarea>
         <button type="submit">Save Word</button>
       </form>
@@ -513,6 +527,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input type="hidden" name="type" value="idiom">
         <input type="text" name="idiom" placeholder="Enter idiom (English)" required>
         <input type="text" name="idiom_marathi" placeholder="Marathi translation (मराठी अर्थ)">
+        <input type="text" name="idiom_hindi" placeholder="Hindi meaning (हिंदी अर्थ)">
         <textarea name="idiom_example" placeholder="Example sentence (optional)"></textarea>
         <button type="submit">Save Idiom</button>
       </form>
@@ -566,8 +581,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="card">
       <h2>Bulk Upload (CSV from Excel)</h2>
       <p class="note">Export from Excel as CSV (UTF‑8). Required columns:</p>
-      <p class="note"><strong>Vocabulary:</strong> entry_date, word, marathi (or marathi_translation), example</p>
-      <p class="note"><strong>Idioms:</strong> entry_date, idiom, marathi (or marathi_translation), example</p>
+      <p class="note"><strong>Vocabulary:</strong> entry_date, word, marathi (or marathi_translation), hindi (or hindi_translation), example</p>
+      <p class="note"><strong>Idioms:</strong> entry_date, idiom, marathi (or marathi_translation), hindi (or hindi_translation), example</p>
       <p class="note"><strong>Everyday Essentials:</strong> entry_date, category, name, marathi (or marathi_translation), image_url</p>
       <p class="note">Need a starting point? Download templates:
         <a href="template-vocabulary.php">Vocabulary CSV template</a> ·
