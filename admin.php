@@ -1048,38 +1048,6 @@ show_page:
         <?php endif; ?>
       </div>
 
-      <!-- Groups management -->
-      <div class="card">
-        <h2>👥 Groups</h2>
-        <?php if ($user_msg && (str_contains($user_msg, 'Group') || str_contains($user_msg, 'group'))): ?>
-          <div class="msg"><?= e($user_msg) ?></div>
-        <?php endif; ?>
-        <?php if ($user_err && (str_contains($user_err, 'group') || str_contains($user_err, 'Group'))): ?>
-          <div class="err"><?= e($user_err) ?></div>
-        <?php endif; ?>
-        <form method="POST" style="display:flex;gap:8px;align-items:center;margin-bottom:14px;">
-          <input type="hidden" name="action" value="create_group">
-          <input type="text" name="group_name" placeholder="New group name" required style="flex:1;padding:8px 10px;border:1px solid #d1d5db;border-radius:7px;font-size:0.9rem;">
-          <button class="btn btn-sm" type="submit">Add Group</button>
-        </form>
-        <?php if ($groups): ?>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;">
-          <?php foreach ($groups as $g): ?>
-          <span style="display:inline-flex;align-items:center;gap:6px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;border-radius:999px;padding:4px 12px;font-size:0.88rem;font-weight:600;">
-            <?= e($g['name']) ?>
-            <form method="POST" style="display:inline;margin:0;" onsubmit="return confirm('Delete group &quot;<?= e(addslashes($g['name'])) ?>&quot;? This will remove it from all assignments.')">
-              <input type="hidden" name="action" value="delete_group">
-              <input type="hidden" name="group_id" value="<?= (int)$g['id'] ?>">
-              <button type="submit" style="background:none;border:none;cursor:pointer;color:#0369a1;font-size:0.8rem;padding:0;line-height:1;opacity:0.7;">✕</button>
-            </form>
-          </span>
-          <?php endforeach; ?>
-        </div>
-        <?php else: ?>
-          <p class="note">No groups yet. Add one above.</p>
-        <?php endif; ?>
-      </div>
-
     </div><!-- /stack users -->
 
     <?php else: ?>
