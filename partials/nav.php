@@ -1,5 +1,10 @@
 <?php
-// Shared responsive top navigation bar
+if (session_status() === PHP_SESSION_NONE) session_start();
+$_nav_role     = $_SESSION['role'] ?? '';
+$_nav_loggedin = !empty($_SESSION['user_id']);
+$_nav_full     = $_SESSION['full_name'] ?? '';
+// Trim name to first word so "Sachin Sai Tawadekar" → "Sachin" in the nav
+$_nav_name     = htmlspecialchars(explode(' ', $_nav_full)[0], ENT_QUOTES, 'UTF-8');
 ?>
 <style>
   /* Base mobile-friendly defaults */
@@ -35,6 +40,9 @@
     min-height: 44px; display: inline-flex; align-items: center;
   }
   .topnav .links a:hover { background: #e5e7eb; }
+  .topnav .links a.logout-link { background:#fef2f2; color:#b91c1c; }
+  .topnav .links a.logout-link:hover { background:#fee2e2; }
+  @media(max-width:768px){ .topnav .links a.logout-link{ background:#ef4444; color:#fff; } }
   .topnav .hamburger {
     display: none; background: transparent; border: 0; font-size: 28px;
     line-height: 1; cursor: pointer; padding: 8px; border-radius: 8px;
@@ -67,9 +75,21 @@
   <div class="links" id="navLinks">
     <a href="index.php">Home</a>
     <a href="vocabulary.php">Vocabulary</a>
-    <?php /* <a href="register.php">Register</a> */ ?>
-    <?php /* <a href="contest-register.php">Contest</a> */ ?>
-    <a href="about.php">About</a>
+    <?php if ($_nav_loggedin): ?>
+      <?php if ($_nav_role === 'student'): ?>
+        <a href="student-dashboard.php">My Assignments</a>
+      <?php elseif ($_nav_role === 'checker'): ?>
+        <a href="checker-dashboard.php">Review</a>
+      <?php elseif ($_nav_role === 'admin'): ?>
+        <a href="admin.php">Admin</a>
+        <a href="checker-dashboard.php">Review</a>
+      <?php endif; ?>
+      <a href="logout.php" class="logout-link">👤 <?= $_nav_name ?> &nbsp;·&nbsp; Logout</a>
+    <?php else: ?>
+      <a href="register.php">Register</a>
+      <a href="about.php">About</a>
+      <a href="login.php">Login</a>
+    <?php endif; ?>
   </div>
   <script>
     (function(){
