@@ -623,7 +623,12 @@ try {
          ORDER BY u.role, u.full_name
          LIMIT ? OFFSET ?"
     );
-    $data_stmt->execute([$like, $like, $like, $u_per_page, $u_offset]);
+    $data_stmt->bindValue(1, $like, PDO::PARAM_STR);
+    $data_stmt->bindValue(2, $like, PDO::PARAM_STR);
+    $data_stmt->bindValue(3, $like, PDO::PARAM_STR);
+    $data_stmt->bindValue(4, (int)$u_per_page, PDO::PARAM_INT);
+    $data_stmt->bindValue(5, (int)$u_offset,   PDO::PARAM_INT);
+    $data_stmt->execute();
     $users = $data_stmt->fetchAll();
 } catch (Throwable $e) {}
 
@@ -1026,7 +1031,7 @@ show_page:
         <!-- Search bar -->
         <form method="GET" action="" class="user-search-bar">
           <input type="hidden" name="tab" value="users">
-          <input type="text" name="q" value="<?= e($u_search) ?>" placeholder="Search by name, username or role…" autocomplete="off">
+          <input type="text" id="user-search-input" name="q" value="<?= e($u_search) ?>" placeholder="Search by name, username or role…" autocomplete="off">
           <button type="submit">Search</button>
           <?php if ($u_search !== ''): ?>
             <a href="?tab=users" class="search-clear">✕ Clear</a>
@@ -1263,6 +1268,20 @@ show_page:
   </main>
   <?php include __DIR__ . '/partials/footer.php'; ?>
   <script>
+    // Live user search: auto-submit after 3+ chars with 400ms debounce
+    (function () {
+      var input = document.getElementById('user-search-input');
+      if (!input) return;
+      var timer;
+      input.addEventListener('input', function () {
+        clearTimeout(timer);
+        var len = input.value.trim().length;
+        if (len === 0 || len >= 3) {
+          timer = setTimeout(function () { input.form.submit(); }, 400);
+        }
+      });
+    })();
+
     function toggleEdit(id) {
       var row = document.getElementById('edit-' + id);
       if (!row) return;
