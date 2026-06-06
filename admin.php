@@ -222,7 +222,7 @@ if (empty($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 
 // ── Active tab ────────────────────────────────────────────────────
-$tab = in_array($_GET['tab'] ?? '', ['vocab', 'users', 'tasks']) ? $_GET['tab'] : 'vocab';
+$tab = in_array($_GET['tab'] ?? '', ['vocab', 'users', 'tasks', 'dashboard']) ? $_GET['tab'] : 'vocab';
 
 // ── User management POST ──────────────────────────────────────────
 $user_msg = ''; $user_err = '';
@@ -676,6 +676,42 @@ try {
 $totalStudents = 0;
 try { $totalStudents = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role='student'")->fetchColumn(); } catch (Throwable $e) {}
 
+// ── Dashboard report data ─────────────────────────────────────────
+$dash_summary    = ['total_assignments' => 0, 'total_students' => 0, 'pending' => 0, 'needs_revision' => 0, 'reviewed' => 0];
+$dash_by_student = [];
+if ($tab === 'dashboard') {
+    try {
+        $srow = $pdo->query(
+            "SELECT
+                (SELECT COUNT(*) FROM allocated_assignments)                                       AS total_assignments,
+                (SELECT COUNT(*) FROM users WHERE role='student')                                  AS total_students,
+                (SELECT COUNT(*) FROM allocated_assignment_responses WHERE status='pending')        AS pending,
+                (SELECT COUNT(*) FROM allocated_assignment_responses WHERE status='needs_revision') AS needs_revision,
+                (SELECT COUNT(*) FROM allocated_assignment_responses WHERE status='reviewed')       AS reviewed"
+        )->fetch();
+        if ($srow) $dash_summary = $srow;
+    } catch (Throwable $ex) {}
+    try {
+        $dash_by_student = $pdo->query(
+            "SELECT u.id, u.full_name, u.username,
+                    (SELECT sg.name FROM student_group_members sgm2
+                     JOIN student_groups sg ON sg.id = sgm2.group_id
+                     WHERE sgm2.student_id = u.id LIMIT 1) AS group_name,
+                    SUM(CASE WHEN aa.id IS NOT NULL AND r.id IS NULL THEN 1 ELSE 0 END) AS not_started,
+                    SUM(CASE WHEN r.status = 'pending'        THEN 1 ELSE 0 END)        AS pending,
+                    SUM(CASE WHEN r.status = 'needs_revision' THEN 1 ELSE 0 END)        AS needs_revision,
+                    SUM(CASE WHEN r.status = 'reviewed'       THEN 1 ELSE 0 END)        AS reviewed
+             FROM users u
+             LEFT JOIN student_group_members sgm ON sgm.student_id = u.id
+             LEFT JOIN allocated_assignments aa  ON aa.allocated_group_id = sgm.group_id
+             LEFT JOIN allocated_assignment_responses r ON r.allocation_id = aa.id AND r.student_id = u.id
+             WHERE u.role = 'student'
+             GROUP BY u.id
+             ORDER BY u.full_name"
+        )->fetchAll();
+    } catch (Throwable $ex) {}
+}
+
 function e($s) { return htmlspecialchars((string)$s, ENT_QUOTES|ENT_SUBSTITUTE, 'UTF-8'); }
 
 goto show_page;
@@ -867,6 +903,35 @@ show_page:
     .pg-btn.active { background:#007BFF; color:#fff; border-color:#007BFF; font-weight:700; }
     .pg-btn.disabled { opacity:0.4; pointer-events:none; }
     @media(max-width:500px){ .pagination{ justify-content:center; } .pagination-info{ width:100%; text-align:center; } }
+
+    /* Dashboard tab */
+    .dash-summary { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:18px; }
+    @media(max-width:800px){ .dash-summary{ grid-template-columns:repeat(3,1fr); } }
+    @media(max-width:480px){ .dash-summary{ grid-template-columns:repeat(2,1fr); gap:8px; } }
+    .ds-cell { background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px; }
+    .ds-cell .ds-label { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#6b7280; margin-bottom:4px; }
+    .ds-cell .ds-value { font-size:1.5rem; font-weight:800; color:#111827; line-height:1; }
+    .rpt-table-wrap { overflow-x:auto; border-radius:8px; border:1px solid #e5e7eb; }
+    .rpt-table { width:100%; border-collapse:collapse; font-size:0.88rem; }
+    .rpt-table th { text-align:left; padding:9px 12px; background:#f9fafb; border-bottom:2px solid #e5e7eb; color:#374151; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; }
+    .rpt-table th.num, .rpt-table td.num { text-align:center; }
+    .rpt-table td { padding:10px 12px; border-bottom:1px solid #f3f4f6; vertical-align:middle; }
+    .rpt-table tr:last-child td { border-bottom:none; }
+    .rpt-table tr.total-row td { background:#f9fafb; font-weight:700; border-top:2px solid #e5e7eb; }
+    @media(max-width:600px){ .rpt-table th, .rpt-table td { padding:8px 9px; font-size:0.82rem; } }
+    .rpt-table th.sortable { cursor:pointer; user-select:none; white-space:nowrap; }
+    .rpt-table th.sortable:hover { background:#eef2ff; color:#1d4ed8; }
+    .rpt-table th.sort-asc, .rpt-table th.sort-desc { background:#eff6ff; color:#1d4ed8; }
+    .sort-icon { font-size:0.75rem; opacity:0.5; margin-left:3px; }
+    .sort-asc .sort-icon::after { content:'▲'; opacity:1; }
+    .sort-desc .sort-icon::after { content:'▼'; opacity:1; }
+    .sort-asc .sort-icon, .sort-desc .sort-icon { font-size:0; }
+    .num-pill { display:inline-block; min-width:28px; text-align:center; padding:2px 8px; border-radius:999px; font-size:0.78rem; font-weight:700; }
+    .np-neutral  { background:#f3f4f6; color:#374151; border:1px solid #e5e7eb; }
+    .np-pending  { background:#fef3c7; color:#92400e; }
+    .np-revision { background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; }
+    .np-reviewed { background:#d1fae5; color:#065f46; }
+    .type-badge { display:inline-block; padding:2px 9px; border-radius:999px; font-size:0.75rem; font-weight:600; }
   </style>
 </head>
 <body>
@@ -897,9 +962,10 @@ show_page:
     </div>
 
     <div class="tabs-bar">
-      <a href="?tab=vocab"  class="tab-link <?= $tab === 'vocab'  ? 'active' : '' ?>">📚 Vocabulary</a>
-      <a href="?tab=users"  class="tab-link <?= $tab === 'users'  ? 'active' : '' ?>">👥 Users</a>
-      <a href="?tab=tasks"  class="tab-link <?= $tab === 'tasks'  ? 'active' : '' ?>">📝 Tasks</a>
+      <a href="?tab=vocab"      class="tab-link <?= $tab === 'vocab'      ? 'active' : '' ?>">📚 Vocabulary</a>
+      <a href="?tab=users"      class="tab-link <?= $tab === 'users'      ? 'active' : '' ?>">👥 Users</a>
+      <a href="?tab=tasks"      class="tab-link <?= $tab === 'tasks'      ? 'active' : '' ?>">📝 Tasks</a>
+      <a href="?tab=dashboard"  class="tab-link <?= $tab === 'dashboard'  ? 'active' : '' ?>">📊 Dashboard</a>
     </div>
 
     <?php if ($tab === 'vocab'): ?>
@@ -1157,7 +1223,7 @@ show_page:
 
     </div><!-- /stack users -->
 
-    <?php else: ?>
+    <?php elseif ($tab === 'tasks'): ?>
     <!-- ── TASKS TAB ── -->
     <div class="stack">
 
@@ -1263,6 +1329,98 @@ show_page:
       </div>
 
     </div><!-- /stack tasks -->
+
+    <?php else: ?>
+    <!-- ── DASHBOARD TAB ── -->
+    <div class="stack">
+      <div class="card">
+        <h2 style="margin:0 0 16px;font-size:1.05rem;color:#111827;">📊 Dashboard</h2>
+
+        <!-- Summary row -->
+        <div class="dash-summary">
+          <div class="ds-cell">
+            <div class="ds-label">Assignments</div>
+            <div class="ds-value"><?= (int)$dash_summary['total_assignments'] ?></div>
+          </div>
+          <div class="ds-cell">
+            <div class="ds-label">Students</div>
+            <div class="ds-value"><?= (int)$dash_summary['total_students'] ?></div>
+          </div>
+          <div class="ds-cell">
+            <div class="ds-label">Pending</div>
+            <div class="ds-value" style="color:#92400e;"><?= (int)$dash_summary['pending'] ?></div>
+          </div>
+          <div class="ds-cell">
+            <div class="ds-label">In Revision</div>
+            <div class="ds-value" style="color:#c2410c;"><?= (int)$dash_summary['needs_revision'] ?></div>
+          </div>
+          <div class="ds-cell">
+            <div class="ds-label">Reviewed</div>
+            <div class="ds-value" style="color:#065f46;"><?= (int)$dash_summary['reviewed'] ?></div>
+          </div>
+        </div>
+
+        <!-- Per-student breakdown -->
+        <div style="font-size:0.82rem;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;">Breakdown by Student</div>
+        <?php if ($dash_by_student): ?>
+        <div class="rpt-table-wrap">
+          <table class="rpt-table" id="admin-dash-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Student</th>
+                <th>Username</th>
+                <th>Group</th>
+                <th class="num sortable" data-col="4">Not Started <span class="sort-icon">⇅</span></th>
+                <th class="num sortable" data-col="5">Pending <span class="sort-icon">⇅</span></th>
+                <th class="num sortable" data-col="6">In Revision <span class="sort-icon">⇅</span></th>
+                <th class="num sortable" data-col="7">Reviewed <span class="sort-icon">⇅</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php
+                $tot_ns = $tot_pend = $tot_rev_need = $tot_rev = 0;
+                foreach ($dash_by_student as $ri => $row):
+                  $tot_ns       += (int)$row['not_started'];
+                  $tot_pend     += (int)$row['pending'];
+                  $tot_rev_need += (int)$row['needs_revision'];
+                  $tot_rev      += (int)$row['reviewed'];
+              ?>
+              <tr>
+                <td style="color:#9ca3af;font-size:0.8rem;"><?= $ri + 1 ?></td>
+                <td style="font-weight:600;color:#111827;"><?= e($row['full_name']) ?></td>
+                <td style="color:#374151;font-size:0.85rem;"><?= e($row['username']) ?></td>
+                <td>
+                  <?php if ($row['group_name']): ?>
+                    <span style="display:inline-block;padding:2px 9px;border-radius:999px;font-size:0.75rem;font-weight:600;background:#e0f2fe;color:#0369a1;"><?= e($row['group_name']) ?></span>
+                  <?php else: ?>
+                    <span style="color:#9ca3af;font-style:italic;font-size:0.82rem;">—</span>
+                  <?php endif; ?>
+                </td>
+                <td class="num"><span class="num-pill np-neutral"><?= (int)$row['not_started'] ?></span></td>
+                <td class="num"><span class="num-pill np-pending"><?= (int)$row['pending'] ?></span></td>
+                <td class="num"><span class="num-pill np-revision"><?= (int)$row['needs_revision'] ?></span></td>
+                <td class="num"><span class="num-pill np-reviewed"><?= (int)$row['reviewed'] ?></span></td>
+              </tr>
+              <?php endforeach; ?>
+            </tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td colspan="4" style="text-align:right;font-size:0.82rem;color:#6b7280;padding-right:16px;">Total</td>
+                <td class="num"><span class="num-pill np-neutral"><?= $tot_ns ?></span></td>
+                <td class="num"><span class="num-pill np-pending"><?= $tot_pend ?></span></td>
+                <td class="num"><span class="num-pill np-revision"><?= $tot_rev_need ?></span></td>
+                <td class="num"><span class="num-pill np-reviewed"><?= $tot_rev ?></span></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <?php else: ?>
+          <p class="note">No students found.</p>
+        <?php endif; ?>
+      </div>
+    </div><!-- /stack dashboard -->
+
     <?php endif; ?>
 
   </main>
@@ -1294,6 +1452,36 @@ show_page:
       if (!row) return;
       row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
     }
+    // Dashboard table column sort
+    (function () {
+      var table = document.getElementById('admin-dash-table');
+      if (!table) return;
+      var lastCol = -1, asc = false;
+      table.querySelectorAll('th.sortable').forEach(function (th) {
+        th.addEventListener('click', function () {
+          var col = parseInt(th.dataset.col);
+          asc = (lastCol === col) ? !asc : false;
+          lastCol = col;
+          table.querySelectorAll('th.sortable').forEach(function (h) {
+            h.classList.remove('sort-asc', 'sort-desc');
+            h.querySelector('.sort-icon').textContent = '⇅';
+          });
+          th.classList.add(asc ? 'sort-asc' : 'sort-desc');
+          th.querySelector('.sort-icon').textContent = '';
+          var tbody = table.querySelector('tbody');
+          var rows  = Array.from(tbody.querySelectorAll('tr'));
+          rows.sort(function (a, b) {
+            var av = parseInt(a.cells[col].textContent.trim()) || 0;
+            var bv = parseInt(b.cells[col].textContent.trim()) || 0;
+            return asc ? av - bv : bv - av;
+          });
+          rows.forEach(function (r, i) {
+            r.cells[0].textContent = i + 1;
+            tbody.appendChild(r);
+          });
+        });
+      });
+    })();
   </script>
 </body>
 </html>
