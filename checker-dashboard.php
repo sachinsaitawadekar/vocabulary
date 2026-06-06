@@ -85,7 +85,7 @@ try {
 try { $c=$pdo->query("SHOW COLUMNS FROM allocated_assignments LIKE 'allocated_group_id'"); if($c->rowCount()===0) $pdo->exec("ALTER TABLE allocated_assignments ADD COLUMN allocated_group_id INT NULL AFTER allocated_to"); } catch (Throwable $ex) {}
 
 // Active panel
-$panel = in_array($_GET['panel'] ?? '', ['review', 'allocate', 'students']) ? $_GET['panel'] : 'review';
+$panel = in_array($_GET['panel'] ?? '', ['review', 'allocate', 'students', 'dashboard']) ? $_GET['panel'] : 'review';
 
 // ── Allocation POST ───────────────────────────────────────────────
 $alloc_msg = ''; $alloc_err = '';
@@ -248,6 +248,40 @@ if ($panel === 'students') {
         $students_list = $dst->fetchAll();
     } catch (Throwable $ex) {}
 }
+
+// ── Dashboard report data ─────────────────────────────────────────
+$dash_summary    = ['total_assignments' => 0, 'total_students' => 0, 'pending' => 0, 'needs_revision' => 0, 'reviewed' => 0];
+$dash_by_student = [];
+if ($panel === 'dashboard') {
+    try {
+        $srow = $pdo->query(
+            "SELECT
+                (SELECT COUNT(*) FROM allocated_assignments)                                       AS total_assignments,
+                (SELECT COUNT(*) FROM users WHERE role='student')                                  AS total_students,
+                (SELECT COUNT(*) FROM allocated_assignment_responses WHERE status='pending')        AS pending,
+                (SELECT COUNT(*) FROM allocated_assignment_responses WHERE status='needs_revision') AS needs_revision,
+                (SELECT COUNT(*) FROM allocated_assignment_responses WHERE status='reviewed')       AS reviewed"
+        )->fetch();
+        if ($srow) $dash_summary = $srow;
+    } catch (Throwable $ex) {}
+    try {
+        $dash_by_student = $pdo->query(
+            "SELECT u.id, u.full_name, u.username,
+                    (SELECT sg.name FROM student_group_members sgm
+                     JOIN student_groups sg ON sg.id = sgm.group_id
+                     WHERE sgm.student_id = u.id LIMIT 1) AS group_name,
+                    COUNT(r.id)                          AS total_assigned,
+                    SUM(r.status = 'pending')            AS pending,
+                    SUM(r.status = 'needs_revision')     AS needs_revision,
+                    SUM(r.status = 'reviewed')           AS reviewed
+             FROM users u
+             LEFT JOIN allocated_assignment_responses r ON r.student_id = u.id
+             WHERE u.role = 'student'
+             GROUP BY u.id
+             ORDER BY u.full_name"
+        )->fetchAll();
+    } catch (Throwable $ex) {}
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -391,6 +425,37 @@ if ($panel === 'students') {
     .alert-warn { background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; padding:9px 12px; border-radius:8px; margin-bottom:12px; font-size:0.9rem; }
     .alert-err  { background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; padding:9px 12px; border-radius:8px; margin-bottom:12px; font-size:0.9rem; }
     .empty-state { text-align:center; color:#9ca3af; padding:28px 0; font-size:0.92rem; }
+
+    /* Dashboard report */
+    .rpt-table-wrap { overflow-x:auto; border-radius:8px; border:1px solid #e5e7eb; }
+    .rpt-table { width:100%; border-collapse:collapse; font-size:0.88rem; }
+    .rpt-table th { text-align:left; padding:9px 12px; background:#f9fafb; border-bottom:2px solid #e5e7eb; color:#374151; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; }
+    .rpt-table th.num, .rpt-table td.num { text-align:center; }
+    .rpt-table td { padding:10px 12px; border-bottom:1px solid #f3f4f6; vertical-align:middle; }
+    .rpt-table tr:last-child td { border-bottom:none; }
+    .rpt-table tr.total-row td { background:#f9fafb; font-weight:700; border-top:2px solid #e5e7eb; }
+    @media(max-width:600px){ .rpt-table th, .rpt-table td { padding:8px 9px; font-size:0.82rem; } }
+    .rpt-table th.sortable { cursor:pointer; user-select:none; white-space:nowrap; }
+    .rpt-table th.sortable:hover { background:#eef2ff; color:#1d4ed8; }
+    .rpt-table th.sort-asc  { background:#eff6ff; color:#1d4ed8; }
+    .rpt-table th.sort-desc { background:#eff6ff; color:#1d4ed8; }
+    .sort-icon { font-size:0.75rem; opacity:0.5; margin-left:3px; }
+    .sort-asc  .sort-icon::after { content:'▲'; opacity:1; }
+    .sort-desc .sort-icon::after { content:'▼'; opacity:1; }
+    .sort-asc  .sort-icon, .sort-desc .sort-icon { font-size:0; }
+    .num-pill { display:inline-block; min-width:28px; text-align:center; padding:2px 8px; border-radius:999px; font-size:0.78rem; font-weight:700; }
+    .np-pending  { background:#fef3c7; color:#92400e; }
+    .np-revision { background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; }
+    .np-reviewed { background:#d1fae5; color:#065f46; }
+    .np-neutral  { background:#f3f4f6; color:#374151; border:1px solid #e5e7eb; }
+
+    /* Summary row above report */
+    .dash-summary { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:18px; }
+    @media(max-width:800px){ .dash-summary{ grid-template-columns:repeat(3,1fr); } }
+    @media(max-width:480px){ .dash-summary{ grid-template-columns:repeat(2,1fr); gap:8px; } }
+    .ds-cell { background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px; }
+    .ds-cell .ds-label { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#6b7280; margin-bottom:4px; }
+    .ds-cell .ds-value { font-size:1.5rem; font-weight:800; color:#111827; line-height:1; }
   </style>
 </head>
 <body>
@@ -398,9 +463,10 @@ if ($panel === 'students') {
   <main class="page-main">
 
     <div class="panel-tabs">
-      <a href="?panel=review"   class="ptab <?= $panel === 'review'   ? 'active' : '' ?>">📋 Review Submissions</a>
-      <a href="?panel=allocate" class="ptab <?= $panel === 'allocate' ? 'active' : '' ?>">📝 Allocate Assignment</a>
-      <a href="?panel=students" class="ptab <?= $panel === 'students' ? 'active' : '' ?>">👨‍🎓 Students</a>
+      <a href="?panel=review"    class="ptab <?= $panel === 'review'    ? 'active' : '' ?>">📋 Review Submissions</a>
+      <a href="?panel=allocate"  class="ptab <?= $panel === 'allocate'  ? 'active' : '' ?>">📝 Allocate Assignment</a>
+      <a href="?panel=students"  class="ptab <?= $panel === 'students'  ? 'active' : '' ?>">👨‍🎓 Students</a>
+      <a href="?panel=dashboard" class="ptab <?= $panel === 'dashboard' ? 'active' : '' ?>">📊 Dashboard</a>
     </div>
 
     <?php if ($panel === 'review'): ?>
@@ -724,6 +790,97 @@ if ($panel === 'students') {
       </div>
     </div>
 
+    <?php elseif ($panel === 'dashboard'): ?>
+    <!-- ══ DASHBOARD PANEL ══ -->
+    <div style="width:100%;max-width:1080px;">
+      <div class="card">
+        <h2>📊 Dashboard</h2>
+
+        <!-- Summary row -->
+        <div class="dash-summary">
+          <div class="ds-cell">
+            <div class="ds-label">Assignments</div>
+            <div class="ds-value"><?= (int)$dash_summary['total_assignments'] ?></div>
+          </div>
+          <div class="ds-cell">
+            <div class="ds-label">Students</div>
+            <div class="ds-value"><?= (int)$dash_summary['total_students'] ?></div>
+          </div>
+          <div class="ds-cell">
+            <div class="ds-label">Pending</div>
+            <div class="ds-value" style="color:#92400e;"><?= (int)$dash_summary['pending'] ?></div>
+          </div>
+          <div class="ds-cell">
+            <div class="ds-label">In Revision</div>
+            <div class="ds-value" style="color:#c2410c;"><?= (int)$dash_summary['needs_revision'] ?></div>
+          </div>
+          <div class="ds-cell">
+            <div class="ds-label">Reviewed</div>
+            <div class="ds-value" style="color:#065f46;"><?= (int)$dash_summary['reviewed'] ?></div>
+          </div>
+        </div>
+
+        <!-- Per-student breakdown -->
+        <div style="font-size:0.82rem;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;">Breakdown by Student</div>
+        <?php if ($dash_by_student): ?>
+        <div class="rpt-table-wrap">
+          <table class="rpt-table" id="dash-student-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Student</th>
+                <th>Username</th>
+                <th>Group</th>
+                <th class="num sortable" data-col="4">Assigned <span class="sort-icon">⇅</span></th>
+                <th class="num sortable" data-col="5">Pending <span class="sort-icon">⇅</span></th>
+                <th class="num sortable" data-col="6">In Revision <span class="sort-icon">⇅</span></th>
+                <th class="num sortable" data-col="7">Reviewed <span class="sort-icon">⇅</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php
+                $tot_asgn = $tot_pend = $tot_rev_need = $tot_rev = 0;
+                foreach ($dash_by_student as $ri => $row):
+                  $tot_asgn     += (int)$row['total_assigned'];
+                  $tot_pend     += (int)$row['pending'];
+                  $tot_rev_need += (int)$row['needs_revision'];
+                  $tot_rev      += (int)$row['reviewed'];
+              ?>
+              <tr>
+                <td style="color:#9ca3af;font-size:0.8rem;"><?= $ri + 1 ?></td>
+                <td style="font-weight:600;color:#111827;"><?= e($row['full_name']) ?></td>
+                <td style="color:#374151;font-size:0.85rem;"><?= e($row['username']) ?></td>
+                <td>
+                  <?php if ($row['group_name']): ?>
+                    <span style="display:inline-block;padding:2px 9px;border-radius:999px;font-size:0.75rem;font-weight:600;background:#e0f2fe;color:#0369a1;"><?= e($row['group_name']) ?></span>
+                  <?php else: ?>
+                    <span style="color:#9ca3af;font-style:italic;font-size:0.82rem;">—</span>
+                  <?php endif; ?>
+                </td>
+                <td class="num"><span class="num-pill np-neutral"><?= (int)$row['total_assigned'] ?></span></td>
+                <td class="num"><span class="num-pill np-pending"><?= (int)$row['pending'] ?></span></td>
+                <td class="num"><span class="num-pill np-revision"><?= (int)$row['needs_revision'] ?></span></td>
+                <td class="num"><span class="num-pill np-reviewed"><?= (int)$row['reviewed'] ?></span></td>
+              </tr>
+              <?php endforeach; ?>
+            </tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td colspan="4" style="text-align:right;font-size:0.82rem;color:#6b7280;padding-right:16px;">Total</td>
+                <td class="num"><span class="num-pill np-neutral"><?= $tot_asgn ?></span></td>
+                <td class="num"><span class="num-pill np-pending"><?= $tot_pend ?></span></td>
+                <td class="num"><span class="num-pill np-revision"><?= $tot_rev_need ?></span></td>
+                <td class="num"><span class="num-pill np-reviewed"><?= $tot_rev ?></span></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <?php else: ?>
+          <div class="empty-state">No students found.</div>
+        <?php endif; ?>
+      </div>
+    </div>
+
     <?php endif; ?>
 
   </main>
@@ -745,6 +902,38 @@ if ($panel === 'students') {
     }
     document.querySelectorAll('.choice-opt input[type=radio]').forEach(function(r) { r.addEventListener('change', syncChoiceOpts); });
     syncChoiceOpts();
+    // Dashboard table column sort
+    (function () {
+      var table = document.getElementById('dash-student-table');
+      if (!table) return;
+      var lastCol = -1, asc = false;
+      table.querySelectorAll('th.sortable').forEach(function (th) {
+        th.addEventListener('click', function () {
+          var col = parseInt(th.dataset.col);
+          asc = (lastCol === col) ? !asc : false; // first click = high→low
+          lastCol = col;
+          // update header styles
+          table.querySelectorAll('th.sortable').forEach(function (h) {
+            h.classList.remove('sort-asc', 'sort-desc');
+            h.querySelector('.sort-icon').textContent = '⇅';
+          });
+          th.classList.add(asc ? 'sort-asc' : 'sort-desc');
+          th.querySelector('.sort-icon').textContent = '';
+          // sort tbody rows (skip tfoot)
+          var tbody = table.querySelector('tbody');
+          var rows  = Array.from(tbody.querySelectorAll('tr'));
+          rows.sort(function (a, b) {
+            var av = parseInt(a.cells[col].textContent.trim()) || 0;
+            var bv = parseInt(b.cells[col].textContent.trim()) || 0;
+            return asc ? av - bv : bv - av;
+          });
+          rows.forEach(function (r, i) {
+            r.cells[0].textContent = i + 1; // re-number
+            tbody.appendChild(r);
+          });
+        });
+      });
+    })();
     // Live search for students panel
     (function () {
       var inp = document.getElementById('st-search-input');
