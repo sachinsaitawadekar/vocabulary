@@ -10,11 +10,18 @@ if (!empty($_SESSION['user_id'])) {
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username'] ?? '');
-    $password = $_POST['password'] ?? '';
+    $username      = trim($_POST['username'] ?? '');
+    $password      = $_POST['password'] ?? '';
+    $captcha_input = trim($_POST['captcha'] ?? '');
+    $captcha_ans   = (int)($_SESSION['captcha_login_answer'] ?? -1);
+
+    // Invalidate used captcha so it must reload
+    unset($_SESSION['captcha_login_answer']);
 
     if ($username === '' || $password === '') {
         $error = 'Please enter your username and password.';
+    } elseif ((int)$captcha_input !== $captcha_ans) {
+        $error = 'Incorrect answer to the security check. Please try again.';
     } else {
         require __DIR__ . '/db.php';
         try {
@@ -93,10 +100,28 @@ $err_msg = match($_GET['e'] ?? '') {
           <label for="password">Password</label>
           <input id="password" name="password" type="password" autocomplete="current-password" required>
         </div>
+        <div class="field">
+          <label>Security Check</label>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <img id="captcha-img" src="captcha.php?for=login&v=<?= time() ?>" alt="Math captcha"
+                 style="border:1px solid #d1d5db;border-radius:8px;height:48px;cursor:pointer;" title="Click to refresh">
+            <button type="button" onclick="refreshCaptcha()" style="background:none;border:1px solid #d1d5db;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:0.85rem;color:#6b7280;" title="Get new question">&#8635;</button>
+          </div>
+          <input id="captcha" name="captcha" type="number" placeholder="Enter the answer" required autocomplete="off">
+        </div>
         <button class="btn" type="submit">Login</button>
       </form>
     </div>
   </main>
   <?php include __DIR__ . '/partials/footer.php'; ?>
+  <script>
+    function refreshCaptcha() {
+      var img = document.getElementById('captcha-img');
+      img.src = 'captcha.php?for=login&v=' + Date.now();
+      document.getElementById('captcha').value = '';
+      document.getElementById('captcha').focus();
+    }
+    document.getElementById('captcha-img').addEventListener('click', refreshCaptcha);
+  </script>
 </body>
 </html>

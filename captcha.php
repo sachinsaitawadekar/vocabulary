@@ -10,6 +10,9 @@ $ans = $a + $b;
 $expr = sprintf('%d + %d = ?', $a, $b);
 
 switch ($for) {
+  case 'login':
+    $_SESSION['captcha_login_answer'] = $ans;
+    break;
   case 'check':
     $_SESSION['captcha_check_answer'] = $ans;
     break;
