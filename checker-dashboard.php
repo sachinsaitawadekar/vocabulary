@@ -231,7 +231,7 @@ if (isset($_GET['saved'])) {
     @media(max-width:600px){ .page-main{ padding:12px 10px; } }
 
     /* Panel switcher */
-    .panel-tabs { display:flex; gap:8px; margin-bottom:18px; width:100%; max-width:1080px; }
+    .panel-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; width:100%; max-width:1080px; }
     .ptab { padding:9px 22px; border-radius:10px; text-decoration:none; font-weight:600; font-size:0.95rem; border:1px solid #e5e7eb; color:#374151; background:#fff; transition:all 0.15s; flex-shrink:0; }
     .ptab:hover  { background:#eef2ff; border-color:#c7d2fe; }
     .ptab.active { background:#007BFF; color:#fff; border-color:#007BFF; }
@@ -268,7 +268,7 @@ if (isset($_GET['saved'])) {
     .asgn-row.selected { background:#eff6ff; border-radius:8px !important; }
     .asgn-info  { flex:1; min-width:0; }
     .asgn-title { font-weight:600; color:#111827; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .asgn-meta  { font-size:0.77rem; color:#6b7280; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .asgn-meta  { font-size:0.82rem; color:#6b7280; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
     /* Badges */
     .badge { display:inline-block; padding:2px 9px; border-radius:999px; font-size:0.75rem; font-weight:600; white-space:nowrap; flex-shrink:0; }
@@ -325,8 +325,9 @@ if (isset($_GET['saved'])) {
     /* Allocation table */
     .alloc-table-wrap { overflow-x:auto; border-radius:8px; border:1px solid #e5e7eb; }
     .alloc-table { width:100%; border-collapse:collapse; font-size:0.88rem; }
-    .alloc-table th { text-align:left; padding:9px 12px; background:#f9fafb; border-bottom:2px solid #e5e7eb; color:#374151; font-size:0.76rem; text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; }
+    .alloc-table th { text-align:left; padding:9px 12px; background:#f9fafb; border-bottom:2px solid #e5e7eb; color:#374151; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; }
     .alloc-table td { padding:10px 12px; border-bottom:1px solid #f3f4f6; vertical-align:middle; }
+    @media(max-width:600px){ .alloc-table th, .alloc-table td { padding:8px; font-size:0.82rem; } }
     .alloc-table .expand-row td { background:#f0f7ff; padding:0; border-bottom:1px solid #e5e7eb; }
     .alloc-table tr:last-child td { border-bottom:none; }
     .alloc-to-all { color:#6b7280; font-style:italic; font-size:0.85rem; }
@@ -345,8 +346,8 @@ if (isset($_GET['saved'])) {
     .btn { display:inline-block; padding:10px 22px; font-size:0.9rem; font-weight:600; background:#007BFF; color:#fff; border:none; border-radius:8px; cursor:pointer; transition:background 0.2s; text-decoration:none; }
     .btn:hover { background:#0056b3; }
     .btn-full { width:100%; text-align:center; }
-    .btn-sm   { padding:5px 12px; font-size:0.82rem; }
-    .btn-ghost { background:#f3f4f6; color:#374151; border:1px solid #e5e7eb; font-size:0.8rem; padding:4px 10px; border-radius:6px; cursor:pointer; transition:background 0.15s; }
+    .btn-sm   { padding:8px 14px; font-size:0.85rem; }
+    .btn-ghost { background:#f3f4f6; color:#374151; border:1px solid #e5e7eb; font-size:0.82rem; padding:7px 12px; border-radius:6px; cursor:pointer; transition:background 0.15s; }
     .btn-ghost:hover { background:#e5e7eb; }
     .btn-danger { background:#ef4444; } .btn-danger:hover { background:#dc2626; }
     @media(max-width:480px){ .btn{ width:100%; text-align:center; } }

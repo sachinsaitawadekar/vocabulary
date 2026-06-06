@@ -105,7 +105,7 @@ $err_msg = match($_GET['e'] ?? '') {
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
             <img id="captcha-img" src="captcha.php?for=login&v=<?= time() ?>" alt="Math captcha"
                  style="border:1px solid #d1d5db;border-radius:8px;height:48px;cursor:pointer;" title="Click to refresh">
-            <button type="button" onclick="refreshCaptcha()" style="background:none;border:1px solid #d1d5db;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:0.85rem;color:#6b7280;" title="Get new question">&#8635;</button>
+            <button type="button" onclick="refreshCaptcha()" style="background:none;border:1px solid #d1d5db;border-radius:8px;padding:10px 14px;cursor:pointer;font-size:1rem;color:#6b7280;min-width:44px;min-height:44px;" title="Get new question">&#8635;</button>
           </div>
           <input id="captcha" name="captcha" type="number" placeholder="Enter the answer" required autocomplete="off">
         </div>

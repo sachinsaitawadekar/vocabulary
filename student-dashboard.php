@@ -249,7 +249,7 @@ foreach ($tasks as $t) {
     .task-respond textarea { width:100%; padding:9px 12px; font-size:0.9rem; border:1px solid #d1d5db; border-radius:8px; min-height:80px; resize:vertical; transition:border-color 0.2s; box-sizing:border-box; }
     .task-respond textarea:focus { outline:none; border-color:#007BFF; box-shadow:0 0 0 3px rgba(0,123,255,0.1); }
     .task-respond .respond-actions { display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap; }
-    .resp-tab { padding:5px 12px; border:1px solid #d1d5db; border-radius:6px; background:#f9fafb; font-size:0.82rem; cursor:pointer; transition:all 0.15s; }
+    .resp-tab { padding:8px 14px; border:1px solid #d1d5db; border-radius:6px; background:#f9fafb; font-size:0.85rem; cursor:pointer; transition:all 0.15s; min-height:36px; }
     .resp-tab.active { background:#007BFF; color:#fff; border-color:#007BFF; }
 
     /* Submitted response */
@@ -274,16 +274,18 @@ foreach ($tasks as $t) {
     .comment-bubble .text { color:#1f2937; line-height:1.55; margin-top:4px; font-size:0.88rem; }
 
     /* Buttons */
-    .btn { padding:10px 20px; font-size:0.92rem; font-weight:600; background:#007BFF; color:#fff; border:none; border-radius:8px; cursor:pointer; transition:background 0.2s; }
+    .btn { padding:11px 20px; font-size:0.92rem; font-weight:600; background:#007BFF; color:#fff; border:none; border-radius:8px; cursor:pointer; transition:background 0.2s; }
     .btn:hover { background:#0056b3; }
-    .btn-sm { padding:6px 14px; font-size:0.82rem; }
+    .btn-sm { padding:8px 16px; font-size:0.85rem; }
     .btn-outline { background:#f3f4f6; color:#111827; border:1px solid #d1d5db; }
     .btn-outline:hover { background:#e5e7eb; }
-    .btn-edit-resp { background:#f3f4f6; color:#374151; border:1px solid #e5e7eb; font-size:0.82rem; padding:4px 10px; border-radius:6px; cursor:pointer; }
+    .btn-edit-resp { background:#f3f4f6; color:#374151; border:1px solid #e5e7eb; font-size:0.85rem; padding:8px 12px; border-radius:6px; cursor:pointer; min-height:36px; }
     .btn-edit-resp:hover { background:#e5e7eb; }
 
     .empty-state { text-align:center; color:#9ca3af; padding:32px 0; font-size:0.95rem; }
-    @media(max-width:520px){ .card{ padding:14px 16px; } .summary-strip{ gap:8px; } .stat-box{ padding:10px; } .task-row-meta{ display:none; } }
+    @media(max-width:600px){ .card{ padding:16px 18px; } }
+    @media(max-width:480px){ .card{ padding:14px 12px; } .summary-strip{ gap:8px; } .stat-box{ padding:10px 8px; } .task-row-meta{ display:none; } .btn{ width:100%; } }
+    @media(max-width:360px){ .task-row-header{ gap:6px; padding:11px 2px; } }
   </style>
 </head>
 <body>

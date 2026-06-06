@@ -727,12 +727,12 @@ show_page:
     .card input[type=file] { margin-bottom:8px; font-size:0.9rem; }
 
     /* Buttons */
-    .btn { padding:9px 18px; font-size:0.9rem; font-weight:600; background:#007BFF; color:#fff;
+    .btn { padding:10px 18px; font-size:0.9rem; font-weight:600; background:#007BFF; color:#fff;
            border:none; border-radius:8px; cursor:pointer; transition:background 0.2s; }
     .btn:hover { background:#0056b3; }
-    .btn-full { width:100%; padding:11px; }
+    .btn-full { width:100%; padding:12px; }
     .btn-danger { background:#ef4444; } .btn-danger:hover { background:#dc2626; }
-    .btn-sm { padding:5px 12px; font-size:0.82rem; }
+    .btn-sm { padding:8px 14px; font-size:0.85rem; }
 
     /* Messages */
     .msg { color:green; margin-bottom:10px; font-size:0.92rem; }
@@ -766,13 +766,12 @@ show_page:
     .resp-bubble .resp-text { color:#1f2937; font-size:0.88rem; line-height:1.55; margin-top:5px; white-space:pre-wrap; }
     .resp-bubble .resp-file { margin-top:6px; }
     .no-resp { color:#9ca3af; font-style:italic; font-size:0.85rem; }
-    .btn-ghost { background:none; border:1px solid #d1d5db; border-radius:6px; padding:4px 10px; font-size:0.8rem; cursor:pointer; color:#374151; }
+    .btn-ghost { background:none; border:1px solid #d1d5db; border-radius:6px; padding:7px 12px; font-size:0.82rem; cursor:pointer; color:#374151; }
     .btn-ghost:hover { background:#f3f4f6; }
 
     /* Assignment stats dashboard */
     .stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; width:100%; max-width:860px; margin-bottom:20px; }
-    @media(max-width:600px){ .stat-grid{ grid-template-columns:repeat(2,1fr); gap:10px; } }
-    @media(max-width:340px){ .stat-grid{ grid-template-columns:1fr 1fr; gap:8px; } }
+    @media(max-width:700px){ .stat-grid{ grid-template-columns:repeat(2,1fr); gap:10px; } }
     .stat-card { border-radius:12px; padding:16px 14px; text-align:center; border:1px solid transparent; }
     .stat-num { font-size:2rem; font-weight:800; line-height:1.1; }
     .stat-lbl { font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; margin-top:4px; opacity:0.75; }
@@ -781,7 +780,8 @@ show_page:
     .stat-revision { background:#fff7ed; border-color:#fdba74; color:#9a3412; }
     .stat-reviewed { background:#f0fdf4; border-color:#86efac; color:#166534; }
     .stat-students { background:#faf5ff; border-color:#d8b4fe; color:#6b21a8; }
-    @media(max-width:600px){ .stat-num{ font-size:1.6rem; } .stat-card{ padding:14px 10px; } }
+    @media(max-width:700px){ .stat-num{ font-size:1.6rem; } .stat-card{ padding:14px 10px; } }
+    @media(max-width:480px){ .stat-num{ font-size:1.4rem; } .stat-card{ padding:12px 8px; } .stat-lbl{ font-size:0.72rem; } }
 
     /* Role badges */
     .role-badge { display:inline-block; padding:2px 9px; border-radius:999px; font-size:0.75rem; font-weight:600; }
@@ -793,8 +793,9 @@ show_page:
     .users-table-wrap { overflow-x:auto; margin-top:4px; border-radius:8px; border:1px solid #e5e7eb; }
     .users-table { width:100%; border-collapse:collapse; font-size:0.9rem; }
     .users-table th { text-align:left; padding:10px 14px; background:#f9fafb; border-bottom:2px solid #e5e7eb;
-                      color:#374151; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; }
-    .users-table td { padding:10px 14px; border-bottom:1px solid #f3f4f6; vertical-align:middle; white-space:nowrap; }
+                      color:#374151; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; }
+    .users-table td { padding:10px 14px; border-bottom:1px solid #f3f4f6; vertical-align:middle; }
+    @media(max-width:600px){ .users-table th, .users-table td { padding:8px 10px; font-size:0.82rem; } }
     .users-table .user-row:last-child td { border-bottom:none; }
     .users-table .user-row:hover td { background:#f9fafb; }
     .users-table .edit-row td { background:#eff6ff; padding:14px; white-space:normal; }
@@ -808,7 +809,8 @@ show_page:
     .btn-edit:hover { background:#e5e7eb; }
     .btn-cancel { background:#6b7280; } .btn-cancel:hover { background:#4b5563; }
     .inline-form { display:contents; }
-    @media(max-width:500px){ .card{ padding:14px; } }
+    @media(max-width:600px){ .card{ padding:16px; } }
+    @media(max-width:480px){ .card{ padding:14px 12px; } }
   </style>
 </head>
 <body>
