@@ -85,7 +85,7 @@ try {
 try { $c=$pdo->query("SHOW COLUMNS FROM allocated_assignments LIKE 'allocated_group_id'"); if($c->rowCount()===0) $pdo->exec("ALTER TABLE allocated_assignments ADD COLUMN allocated_group_id INT NULL AFTER allocated_to"); } catch (Throwable $ex) {}
 
 // Active panel
-$panel = in_array($_GET['panel'] ?? '', ['review', 'allocate']) ? $_GET['panel'] : 'review';
+$panel = in_array($_GET['panel'] ?? '', ['review', 'allocate', 'students']) ? $_GET['panel'] : 'review';
 
 // ── Allocation POST ───────────────────────────────────────────────
 $alloc_msg = ''; $alloc_err = '';
@@ -213,6 +213,40 @@ $alloc_saved_msg = '';
 if (isset($_GET['saved'])) {
     if ($_GET['saved'] === 'alloc') $alloc_saved_msg = '✅ Assignment allocated successfully.';
     if ($_GET['saved'] === 'del')   $alloc_saved_msg = '✅ Assignment deleted.';
+}
+
+// ── Students list data ────────────────────────────────────────────
+$st_search   = trim($_GET['sq'] ?? '');
+$st_per_page = 10;
+$st_page     = max(1, (int)($_GET['spage'] ?? 1));
+$st_total    = 0;
+$st_pages    = 1;
+$students_list = [];
+if ($panel === 'students') {
+    try {
+        $like = '%' . $st_search . '%';
+        $cnt  = $pdo->prepare("SELECT COUNT(*) FROM users u WHERE u.role='student' AND (u.full_name LIKE ? OR u.username LIKE ?)");
+        $cnt->execute([$like, $like]);
+        $st_total  = (int)$cnt->fetchColumn();
+        $st_pages  = max(1, (int)ceil($st_total / $st_per_page));
+        $st_page   = min($st_page, $st_pages);
+        $st_offset = ($st_page - 1) * $st_per_page;
+        $dst = $pdo->prepare(
+            "SELECT u.id, u.full_name, u.username, u.created_at,
+                    (SELECT sg.name FROM student_group_members sgm
+                     JOIN student_groups sg ON sg.id = sgm.group_id
+                     WHERE sgm.student_id = u.id LIMIT 1) AS group_name
+             FROM users u WHERE u.role='student'
+             AND (u.full_name LIKE ? OR u.username LIKE ?)
+             ORDER BY u.full_name LIMIT ? OFFSET ?"
+        );
+        $dst->bindValue(1, $like, PDO::PARAM_STR);
+        $dst->bindValue(2, $like, PDO::PARAM_STR);
+        $dst->bindValue(3, $st_per_page, PDO::PARAM_INT);
+        $dst->bindValue(4, $st_offset,   PDO::PARAM_INT);
+        $dst->execute();
+        $students_list = $dst->fetchAll();
+    } catch (Throwable $ex) {}
 }
 ?>
 <!DOCTYPE html>
@@ -366,6 +400,7 @@ if (isset($_GET['saved'])) {
     <div class="panel-tabs">
       <a href="?panel=review"   class="ptab <?= $panel === 'review'   ? 'active' : '' ?>">📋 Review Submissions</a>
       <a href="?panel=allocate" class="ptab <?= $panel === 'allocate' ? 'active' : '' ?>">📝 Allocate Assignment</a>
+      <a href="?panel=students" class="ptab <?= $panel === 'students' ? 'active' : '' ?>">👨‍🎓 Students</a>
     </div>
 
     <?php if ($panel === 'review'): ?>
@@ -475,7 +510,7 @@ if (isset($_GET['saved'])) {
 
     </div><!-- /layout review -->
 
-    <?php else: ?>
+    <?php elseif ($panel === 'allocate'): ?>
     <!-- ══ ALLOCATE PANEL ══ -->
     <div class="alloc-wrap">
 
@@ -594,6 +629,101 @@ if (isset($_GET['saved'])) {
       </div>
 
     </div><!-- /alloc-wrap -->
+
+    <?php elseif ($panel === 'students'): ?>
+    <!-- ══ STUDENTS PANEL ══ -->
+    <div style="width:100%;max-width:1080px;">
+      <div class="card">
+        <h2>👨‍🎓 Students</h2>
+
+        <!-- Search bar -->
+        <form method="GET" id="st-search-form" style="margin-bottom:14px;">
+          <input type="hidden" name="panel" value="students">
+          <input type="hidden" name="spage" value="1">
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" id="st-search-input" name="sq"
+                   value="<?= e($st_search) ?>"
+                   placeholder="Search by name or username…"
+                   autocomplete="off"
+                   style="flex:1;padding:9px 12px;font-size:0.92rem;border:1px solid #d1d5db;border-radius:8px;transition:border-color 0.2s;min-width:0;">
+            <?php if ($st_search): ?>
+              <a href="?panel=students" style="padding:9px 14px;border:1px solid #e5e7eb;border-radius:8px;font-size:0.87rem;color:#374151;text-decoration:none;white-space:nowrap;background:#f9fafb;">✕ Clear</a>
+            <?php endif; ?>
+          </div>
+        </form>
+
+        <?php if ($students_list): ?>
+        <div style="overflow-x:auto;border-radius:8px;border:1px solid #e5e7eb;">
+          <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+            <thead>
+              <tr>
+                <th style="text-align:left;padding:9px 12px;background:#f9fafb;border-bottom:2px solid #e5e7eb;color:#374151;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;">#</th>
+                <th style="text-align:left;padding:9px 12px;background:#f9fafb;border-bottom:2px solid #e5e7eb;color:#374151;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.04em;">Name</th>
+                <th style="text-align:left;padding:9px 12px;background:#f9fafb;border-bottom:2px solid #e5e7eb;color:#374151;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.04em;">Username</th>
+                <th style="text-align:left;padding:9px 12px;background:#f9fafb;border-bottom:2px solid #e5e7eb;color:#374151;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.04em;">Group</th>
+                <th style="text-align:left;padding:9px 12px;background:#f9fafb;border-bottom:2px solid #e5e7eb;color:#374151;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;">Joined</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($students_list as $i => $st): ?>
+              <tr>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#9ca3af;font-size:0.82rem;"><?= $st_offset + $i + 1 ?></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;font-weight:600;color:#111827;"><?= e($st['full_name']) ?></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#374151;font-size:0.85rem;"><?= e($st['username']) ?></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;">
+                  <?php if ($st['group_name']): ?>
+                    <span style="display:inline-block;padding:2px 9px;border-radius:999px;font-size:0.75rem;font-weight:600;background:#e0f2fe;color:#0369a1;"><?= e($st['group_name']) ?></span>
+                  <?php else: ?>
+                    <span style="color:#9ca3af;font-style:italic;font-size:0.82rem;">—</span>
+                  <?php endif; ?>
+                </td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280;font-size:0.82rem;white-space:nowrap;"><?= e(date('d M Y', strtotime($st['created_at']))) ?></td>
+              </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Footer: count + pagination -->
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:12px;">
+          <div style="font-size:0.82rem;color:#9ca3af;">
+            <?= $st_total ?> student<?= $st_total !== 1 ? 's' : '' ?> total
+            <?php if ($st_search): ?>&nbsp;· filtered<?php endif; ?>
+          </div>
+          <?php if ($st_pages > 1):
+            $st_q = $st_search ? '&sq=' . urlencode($st_search) : '';
+            $st_win_start = max(1, $st_page - 2);
+            $st_win_end   = min($st_pages, $st_page + 2);
+          ?>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
+            <?php if ($st_page > 1): ?>
+              <a href="?panel=students&spage=<?= $st_page-1 ?><?= $st_q ?>" style="padding:5px 11px;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;text-decoration:none;color:#374151;background:#fff;">‹</a>
+            <?php endif; ?>
+            <?php if ($st_win_start > 1): ?>
+              <a href="?panel=students&spage=1<?= $st_q ?>" style="padding:5px 11px;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;text-decoration:none;color:#374151;background:#fff;">1</a>
+              <?php if ($st_win_start > 2): ?><span style="padding:5px 4px;font-size:0.82rem;color:#9ca3af;">…</span><?php endif; ?>
+            <?php endif; ?>
+            <?php for ($p = $st_win_start; $p <= $st_win_end; $p++): ?>
+              <a href="?panel=students&spage=<?= $p ?><?= $st_q ?>"
+                 style="padding:5px 11px;border-radius:6px;font-size:0.82rem;text-decoration:none;<?= $p===$st_page ? 'background:#007BFF;color:#fff;border:1px solid #007BFF;' : 'border:1px solid #e5e7eb;color:#374151;background:#fff;' ?>"><?= $p ?></a>
+            <?php endfor; ?>
+            <?php if ($st_win_end < $st_pages): ?>
+              <?php if ($st_win_end < $st_pages - 1): ?><span style="padding:5px 4px;font-size:0.82rem;color:#9ca3af;">…</span><?php endif; ?>
+              <a href="?panel=students&spage=<?= $st_pages ?><?= $st_q ?>" style="padding:5px 11px;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;text-decoration:none;color:#374151;background:#fff;"><?= $st_pages ?></a>
+            <?php endif; ?>
+            <?php if ($st_page < $st_pages): ?>
+              <a href="?panel=students&spage=<?= $st_page+1 ?><?= $st_q ?>" style="padding:5px 11px;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;text-decoration:none;color:#374151;background:#fff;">›</a>
+            <?php endif; ?>
+          </div>
+          <?php endif; ?>
+        </div>
+
+        <?php else: ?>
+          <div class="empty-state"><?= $st_search ? 'No students match your search.' : 'No students found.' ?></div>
+        <?php endif; ?>
+      </div>
+    </div>
+
     <?php endif; ?>
 
   </main>
@@ -615,6 +745,19 @@ if (isset($_GET['saved'])) {
     }
     document.querySelectorAll('.choice-opt input[type=radio]').forEach(function(r) { r.addEventListener('change', syncChoiceOpts); });
     syncChoiceOpts();
+    // Live search for students panel
+    (function () {
+      var inp = document.getElementById('st-search-input');
+      if (!inp) return;
+      var timer;
+      inp.addEventListener('input', function () {
+        clearTimeout(timer);
+        var len = inp.value.trim().length;
+        if (len === 0 || len >= 3) {
+          timer = setTimeout(function () { inp.form.submit(); }, 400);
+        }
+      });
+    })();
   </script>
 </body>
 </html>
