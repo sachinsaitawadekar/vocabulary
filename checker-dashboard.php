@@ -270,7 +270,7 @@ if ($panel === 'dashboard') {
                     (SELECT sg.name FROM student_group_members sgm2
                      JOIN student_groups sg ON sg.id = sgm2.group_id
                      WHERE sgm2.student_id = u.id LIMIT 1) AS group_name,
-                    COUNT(DISTINCT aa.id)                                                        AS total_assigned,
+                    SUM(CASE WHEN aa.id IS NOT NULL AND r.id IS NULL THEN 1 ELSE 0 END)          AS not_started,
                     SUM(CASE WHEN r.status = 'pending'        THEN 1 ELSE 0 END)                AS pending,
                     SUM(CASE WHEN r.status = 'needs_revision' THEN 1 ELSE 0 END)                AS needs_revision,
                     SUM(CASE WHEN r.status = 'reviewed'       THEN 1 ELSE 0 END)                AS reviewed
@@ -833,7 +833,7 @@ if ($panel === 'dashboard') {
                 <th>Student</th>
                 <th>Username</th>
                 <th>Group</th>
-                <th class="num sortable" data-col="4">Assigned <span class="sort-icon">⇅</span></th>
+                <th class="num sortable" data-col="4">Not Started <span class="sort-icon">⇅</span></th>
                 <th class="num sortable" data-col="5">Pending <span class="sort-icon">⇅</span></th>
                 <th class="num sortable" data-col="6">In Revision <span class="sort-icon">⇅</span></th>
                 <th class="num sortable" data-col="7">Reviewed <span class="sort-icon">⇅</span></th>
@@ -841,9 +841,9 @@ if ($panel === 'dashboard') {
             </thead>
             <tbody>
               <?php
-                $tot_asgn = $tot_pend = $tot_rev_need = $tot_rev = 0;
+                $tot_not_started = $tot_pend = $tot_rev_need = $tot_rev = 0;
                 foreach ($dash_by_student as $ri => $row):
-                  $tot_asgn     += (int)$row['total_assigned'];
+                  $tot_not_started += (int)$row['not_started'];
                   $tot_pend     += (int)$row['pending'];
                   $tot_rev_need += (int)$row['needs_revision'];
                   $tot_rev      += (int)$row['reviewed'];
@@ -859,7 +859,7 @@ if ($panel === 'dashboard') {
                     <span style="color:#9ca3af;font-style:italic;font-size:0.82rem;">—</span>
                   <?php endif; ?>
                 </td>
-                <td class="num"><span class="num-pill np-neutral"><?= (int)$row['total_assigned'] ?></span></td>
+                <td class="num"><span class="num-pill np-neutral"><?= (int)$row['not_started'] ?></span></td>
                 <td class="num"><span class="num-pill np-pending"><?= (int)$row['pending'] ?></span></td>
                 <td class="num"><span class="num-pill np-revision"><?= (int)$row['needs_revision'] ?></span></td>
                 <td class="num"><span class="num-pill np-reviewed"><?= (int)$row['reviewed'] ?></span></td>
@@ -869,7 +869,7 @@ if ($panel === 'dashboard') {
             <tfoot>
               <tr class="total-row">
                 <td colspan="4" style="text-align:right;font-size:0.82rem;color:#6b7280;padding-right:16px;">Total</td>
-                <td class="num"><span class="num-pill np-neutral"><?= $tot_asgn ?></span></td>
+                <td class="num"><span class="num-pill np-neutral"><?= $tot_not_started ?></span></td>
                 <td class="num"><span class="num-pill np-pending"><?= $tot_pend ?></span></td>
                 <td class="num"><span class="num-pill np-revision"><?= $tot_rev_need ?></span></td>
                 <td class="num"><span class="num-pill np-reviewed"><?= $tot_rev ?></span></td>
