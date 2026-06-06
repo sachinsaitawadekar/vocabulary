@@ -256,26 +256,28 @@ if ($panel === 'dashboard') {
     try {
         $srow = $pdo->query(
             "SELECT
-                (SELECT COUNT(*) FROM allocated_assignments)                                       AS total_assignments,
-                (SELECT COUNT(*) FROM users WHERE role='student')                                  AS total_students,
+                (SELECT COUNT(*) FROM allocated_assignments)                                        AS total_assignments,
+                (SELECT COUNT(*) FROM users WHERE role='student')                                   AS total_students,
                 (SELECT COUNT(*) FROM allocated_assignment_responses WHERE status='pending')        AS pending,
-                (SELECT COUNT(*) FROM allocated_assignment_responses WHERE status='needs_revision') AS needs_revision,
-                (SELECT COUNT(*) FROM allocated_assignment_responses WHERE status='reviewed')       AS reviewed"
+                (SELECT COUNT(*) FROM allocated_assignment_responses WHERE status='needs_revision')  AS needs_revision,
+                (SELECT COUNT(*) FROM allocated_assignment_responses WHERE status='reviewed')        AS reviewed"
         )->fetch();
         if ($srow) $dash_summary = $srow;
     } catch (Throwable $ex) {}
     try {
         $dash_by_student = $pdo->query(
             "SELECT u.id, u.full_name, u.username,
-                    (SELECT sg.name FROM student_group_members sgm
-                     JOIN student_groups sg ON sg.id = sgm.group_id
-                     WHERE sgm.student_id = u.id LIMIT 1) AS group_name,
-                    COUNT(r.id)                          AS total_assigned,
-                    SUM(r.status = 'pending')            AS pending,
-                    SUM(r.status = 'needs_revision')     AS needs_revision,
-                    SUM(r.status = 'reviewed')           AS reviewed
+                    (SELECT sg.name FROM student_group_members sgm2
+                     JOIN student_groups sg ON sg.id = sgm2.group_id
+                     WHERE sgm2.student_id = u.id LIMIT 1) AS group_name,
+                    COUNT(DISTINCT aa.id)                                                        AS total_assigned,
+                    SUM(CASE WHEN r.status = 'pending'        THEN 1 ELSE 0 END)                AS pending,
+                    SUM(CASE WHEN r.status = 'needs_revision' THEN 1 ELSE 0 END)                AS needs_revision,
+                    SUM(CASE WHEN r.status = 'reviewed'       THEN 1 ELSE 0 END)                AS reviewed
              FROM users u
-             LEFT JOIN allocated_assignment_responses r ON r.student_id = u.id
+             LEFT JOIN student_group_members sgm ON sgm.student_id = u.id
+             LEFT JOIN allocated_assignments aa  ON aa.allocated_group_id = sgm.group_id
+             LEFT JOIN allocated_assignment_responses r ON r.allocation_id = aa.id AND r.student_id = u.id
              WHERE u.role = 'student'
              GROUP BY u.id
              ORDER BY u.full_name"
