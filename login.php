@@ -38,6 +38,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['role']      = $user['role'];
             $_SESSION['full_name'] = $user['full_name'];
 
+            // Set 90-day persistent login token
+            try {
+                $token = bin2hex(random_bytes(32));
+                $pdo->prepare(
+                    'INSERT INTO remember_tokens (user_id, token, expires_at)
+                     VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 90 DAY))
+                     ON DUPLICATE KEY UPDATE token=VALUES(token), expires_at=VALUES(expires_at)'
+                )->execute([$user['id'], $token]);
+                setcookie('remember_token', $token, [
+                    'expires'  => time() + 90 * 24 * 3600,
+                    'path'     => '/',
+                    'httponly' => true,
+                    'samesite' => 'Lax',
+                ]);
+            } catch (Throwable $e) {}
+
             if ($user['role'] === 'admin')   { header('Location: admin.php'); exit; }
             if ($user['role'] === 'checker') { header('Location: checker-dashboard.php'); exit; }
             header('Location: student-dashboard.php'); exit;
