@@ -596,16 +596,35 @@ if ($tab === 'vocab' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ── User list (with current group) ───────────────────────────────
-$users = [];
+// ── User list with search + pagination ───────────────────────────
+$u_search   = trim($_GET['q'] ?? '');
+$u_per_page = 10;
+$u_page     = max(1, (int)($_GET['upage'] ?? 1));
+$u_total    = 0;
+$u_pages    = 1;
+$users      = [];
+
 try {
-    $users = $pdo->query(
+    $like = '%' . $u_search . '%';
+
+    $count_stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE full_name LIKE ? OR username LIKE ? OR role LIKE ?");
+    $count_stmt->execute([$like, $like, $like]);
+    $u_total  = (int)$count_stmt->fetchColumn();
+    $u_pages  = max(1, (int)ceil($u_total / $u_per_page));
+    $u_page   = min($u_page, $u_pages);
+    $u_offset = ($u_page - 1) * $u_per_page;
+
+    $data_stmt = $pdo->prepare(
         "SELECT u.id, u.username, u.full_name, u.role, u.created_at,
                 (SELECT sgm.group_id FROM student_group_members sgm WHERE sgm.student_id = u.id LIMIT 1) AS current_group_id,
                 (SELECT sg.name FROM student_group_members sgm JOIN student_groups sg ON sg.id = sgm.group_id WHERE sgm.student_id = u.id LIMIT 1) AS current_group_name
          FROM users u
-         ORDER BY u.role, u.full_name"
-    )->fetchAll();
+         WHERE u.full_name LIKE ? OR u.username LIKE ? OR u.role LIKE ?
+         ORDER BY u.role, u.full_name
+         LIMIT ? OFFSET ?"
+    );
+    $data_stmt->execute([$like, $like, $like, $u_per_page, $u_offset]);
+    $users = $data_stmt->fetchAll();
 } catch (Throwable $e) {}
 
 // ── Groups ────────────────────────────────────────────────────────
@@ -823,6 +842,26 @@ show_page:
     .inline-form { display:contents; }
     @media(max-width:600px){ .card{ padding:16px; } }
     @media(max-width:480px){ .card{ padding:14px 12px; } }
+
+    /* User search bar */
+    .user-search-bar { display:flex; gap:8px; margin-bottom:14px; }
+    .user-search-bar input { flex:1; padding:9px 12px; font-size:0.92rem; border:1px solid #d1d5db; border-radius:8px; min-width:0; }
+    .user-search-bar input:focus { outline:none; border-color:#007BFF; box-shadow:0 0 0 3px rgba(0,123,255,0.1); }
+    .user-search-bar button { padding:9px 16px; font-size:0.88rem; font-weight:600; background:#007BFF; color:#fff; border:none; border-radius:8px; cursor:pointer; white-space:nowrap; }
+    .user-search-bar button:hover { background:#0056b3; }
+    .search-clear { padding:9px 14px; font-size:0.88rem; background:#f3f4f6; color:#374151; border:1px solid #e5e7eb; border-radius:8px; cursor:pointer; white-space:nowrap; text-decoration:none; display:inline-flex; align-items:center; }
+    .search-clear:hover { background:#e5e7eb; }
+    .search-meta { font-size:0.82rem; color:#6b7280; margin-bottom:10px; }
+
+    /* Pagination */
+    .pagination { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:14px; flex-wrap:wrap; }
+    .pagination-info { font-size:0.82rem; color:#6b7280; }
+    .pagination-links { display:flex; gap:4px; flex-wrap:wrap; }
+    .pg-btn { display:inline-flex; align-items:center; justify-content:center; min-width:36px; height:36px; padding:0 10px; border:1px solid #e5e7eb; border-radius:7px; font-size:0.85rem; color:#374151; text-decoration:none; background:#fff; transition:all 0.15s; }
+    .pg-btn:hover { background:#eef2ff; border-color:#c7d2fe; }
+    .pg-btn.active { background:#007BFF; color:#fff; border-color:#007BFF; font-weight:700; }
+    .pg-btn.disabled { opacity:0.4; pointer-events:none; }
+    @media(max-width:500px){ .pagination{ justify-content:center; } .pagination-info{ width:100%; text-align:center; } }
   </style>
 </head>
 <body>
@@ -961,7 +1000,7 @@ show_page:
         <h2>Create New User</h2>
         <?php if ($user_msg) echo "<div class='msg'>$user_msg</div>"; ?>
         <?php if ($user_err) echo "<div class='err'>$user_err</div>"; ?>
-        <form method="POST">
+        <form method="POST" action="?tab=users<?= $u_search !== '' ? '&q=' . urlencode($u_search) : '' ?>&upage=<?= $u_page ?>">
           <input type="hidden" name="action" value="create_user">
           <input type="text" name="full_name" placeholder="Full Name" required>
           <input type="text" name="username" placeholder="Username (used to log in)" required autocomplete="off">
@@ -982,7 +1021,22 @@ show_page:
       </div>
 
       <div class="card">
-        <h2>All Users</h2>
+        <h2>All Users <span style="font-size:0.8rem;font-weight:400;color:#6b7280;">(<?= $u_total ?>)</span></h2>
+
+        <!-- Search bar -->
+        <form method="GET" action="" class="user-search-bar">
+          <input type="hidden" name="tab" value="users">
+          <input type="text" name="q" value="<?= e($u_search) ?>" placeholder="Search by name, username or role…" autocomplete="off">
+          <button type="submit">Search</button>
+          <?php if ($u_search !== ''): ?>
+            <a href="?tab=users" class="search-clear">✕ Clear</a>
+          <?php endif; ?>
+        </form>
+
+        <?php if ($u_search !== ''): ?>
+          <p class="search-meta">Showing <?= count($users) ?> of <?= $u_total ?> result<?= $u_total !== 1 ? 's' : '' ?> for "<strong><?= e($u_search) ?></strong>"</p>
+        <?php endif; ?>
+
         <?php if ($users): ?>
         <div class="users-table-wrap">
           <table class="users-table">
@@ -998,9 +1052,9 @@ show_page:
               </tr>
             </thead>
             <tbody>
-              <?php foreach ($users as $i => $u): $uid = (int)$u['id']; ?>
+              <?php foreach ($users as $i => $u): $uid = (int)$u['id']; $u_offset_val = ($u_page - 1) * $u_per_page; ?>
               <tr class="user-row">
-                <td style="color:#9ca3af;font-size:0.82rem;"><?= $i + 1 ?></td>
+                <td style="color:#9ca3af;font-size:0.82rem;"><?= $u_offset_val + $i + 1 ?></td>
                 <td style="font-weight:600;color:#111827;"><?= e($u['full_name']) ?></td>
                 <td style="color:#6b7280;">@<?= e($u['username']) ?></td>
                 <td><span class="role-badge role-<?= e($u['role']) ?>"><?= ucfirst(e($u['role'])) ?></span></td>
@@ -1016,7 +1070,7 @@ show_page:
                   <button class="btn btn-sm btn-edit" type="button"
                           onclick="toggleEdit(<?= $uid ?>)">Edit</button>
                   <?php if ($uid !== (int)$_SESSION['user_id']): ?>
-                  <form method="POST" class="inline-form"
+                  <form method="POST" action="?tab=users<?= $u_search !== '' ? '&q=' . urlencode($u_search) : '' ?>&upage=<?= $u_page ?>" class="inline-form"
                         onsubmit="return confirm('Delete <?= e(addslashes($u['full_name'])) ?>? This cannot be undone.')">
                     <input type="hidden" name="action" value="delete_user">
                     <input type="hidden" name="del_id" value="<?= $uid ?>">
@@ -1027,7 +1081,7 @@ show_page:
               </tr>
               <tr class="edit-row" id="edit-<?= $uid ?>" style="display:none;">
                 <td colspan="7">
-                  <form method="POST">
+                  <form method="POST" action="?tab=users<?= $u_search !== '' ? '&q=' . urlencode($u_search) : '' ?>&upage=<?= $u_page ?>">
                     <input type="hidden" name="action" value="update_user">
                     <input type="hidden" name="upd_id" value="<?= $uid ?>">
                     <div class="edit-fields">
@@ -1057,8 +1111,42 @@ show_page:
             </tbody>
           </table>
         </div>
+
+        <!-- Pagination -->
+        <?php if ($u_pages > 1): ?>
+        <div class="pagination">
+          <span class="pagination-info">
+            Page <?= $u_page ?> of <?= $u_pages ?> &nbsp;·&nbsp; <?= $u_total ?> users
+          </span>
+          <div class="pagination-links">
+            <?php
+              $pg_base = '?tab=users' . ($u_search !== '' ? '&q=' . urlencode($u_search) : '') . '&upage=';
+              $show_prev = $u_page > 1;
+              $show_next = $u_page < $u_pages;
+              // Determine page window (show max 5 page links)
+              $pg_start = max(1, $u_page - 2);
+              $pg_end   = min($u_pages, $pg_start + 4);
+              $pg_start = max(1, $pg_end - 4);
+            ?>
+            <a href="<?= $pg_base . ($u_page - 1) ?>" class="pg-btn <?= !$show_prev ? 'disabled' : '' ?>">&#8249;</a>
+            <?php if ($pg_start > 1): ?>
+              <a href="<?= $pg_base . 1 ?>" class="pg-btn">1</a>
+              <?php if ($pg_start > 2): ?><span class="pg-btn disabled">…</span><?php endif; ?>
+            <?php endif; ?>
+            <?php for ($p = $pg_start; $p <= $pg_end; $p++): ?>
+              <a href="<?= $pg_base . $p ?>" class="pg-btn <?= $p === $u_page ? 'active' : '' ?>"><?= $p ?></a>
+            <?php endfor; ?>
+            <?php if ($pg_end < $u_pages): ?>
+              <?php if ($pg_end < $u_pages - 1): ?><span class="pg-btn disabled">…</span><?php endif; ?>
+              <a href="<?= $pg_base . $u_pages ?>" class="pg-btn"><?= $u_pages ?></a>
+            <?php endif; ?>
+            <a href="<?= $pg_base . ($u_page + 1) ?>" class="pg-btn <?= !$show_next ? 'disabled' : '' ?>">&#8250;</a>
+          </div>
+        </div>
+        <?php endif; ?>
+
         <?php else: ?>
-          <p class="note">No users yet.</p>
+          <p class="note"><?= $u_search !== '' ? 'No users match your search.' : 'No users yet.' ?></p>
         <?php endif; ?>
       </div>
 
