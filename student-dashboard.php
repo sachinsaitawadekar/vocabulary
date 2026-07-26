@@ -81,6 +81,7 @@ function e($s) { return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE
 
 // ── POST: respond to allocated task ──────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'respond') {
+    csrf_verify();
     $alloc_id = (int)($_POST['allocation_id'] ?? 0);
     $response = trim($_POST['response'] ?? '');
 
@@ -115,6 +116,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'respo
         } elseif ($response === '' && !$resp_file_path) {
             $respond_error = 'Please write a response or attach a file.';
         } else {
+            // Verify this allocation is actually assigned to the student's group
+            $auth_check = $pdo->prepare(
+                "SELECT 1 FROM allocated_assignments aa
+                 JOIN student_group_members sgm ON sgm.group_id = aa.allocated_group_id
+                 WHERE aa.id = ? AND sgm.student_id = ?
+                 UNION
+                 SELECT 1 FROM allocated_assignments WHERE id = ? AND allocated_to = ?
+                 LIMIT 1"
+            );
+            $auth_check->execute([$alloc_id, $student_id, $alloc_id, $student_id]);
+            if (!$auth_check->fetch()) {
+                $respond_error = 'You are not authorised to respond to this assignment.';
+            }
+        }
+        if (!$respond_error && $alloc_id) {
             $pdo->prepare(
                 "INSERT INTO allocated_assignment_responses
                     (allocation_id, student_id, response, file_path, original_filename, status)
@@ -411,6 +427,7 @@ foreach ($tasks as $t) {
                   <?= $needsRevision ? '🔄 Update Response' : 'Edit Response' ?>
                 </button>
                 <form method="POST" enctype="multipart/form-data" id="resp-edit-<?= $tid ?>" style="display:none;margin-top:10px;">
+                  <?= csrf_input() ?>
                   <input type="hidden" name="action" value="respond">
                   <input type="hidden" name="allocation_id" value="<?= $tid ?>">
                   <label style="font-size:0.82rem;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Text Response</label>
@@ -429,6 +446,7 @@ foreach ($tasks as $t) {
               <!-- Not yet responded -->
               <div class="task-respond">
                 <form method="POST" enctype="multipart/form-data">
+                  <?= csrf_input() ?>
                   <input type="hidden" name="action" value="respond">
                   <input type="hidden" name="allocation_id" value="<?= $tid ?>">
                   <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">

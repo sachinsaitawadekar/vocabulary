@@ -51,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'path'     => '/',
                     'httponly' => true,
                     'samesite' => 'Lax',
+                    'secure'   => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
                 ]);
             } catch (Throwable $e) {}
 
