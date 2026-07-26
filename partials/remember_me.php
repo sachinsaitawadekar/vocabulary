@@ -44,7 +44,6 @@ try {
             'path'     => '/',
             'httponly' => true,
             'samesite' => 'Lax',
-            'secure'   => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
         ]);
     } else {
         // Token expired or not found — wipe the cookie

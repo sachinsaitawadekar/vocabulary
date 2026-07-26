@@ -90,7 +90,6 @@ $panel = in_array($_GET['panel'] ?? '', ['review', 'allocate', 'students', 'dash
 // ── Allocation POST ───────────────────────────────────────────────
 $alloc_msg = ''; $alloc_err = '';
 if ($panel === 'allocate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    csrf_verify();
     $action = $_POST['action'] ?? '';
 
     if ($action === 'allocate') {
@@ -112,7 +111,7 @@ if ($panel === 'allocate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete_allocation') {
         $del_id = (int)($_POST['del_id'] ?? 0);
         if ($del_id) {
-            $pdo->prepare('DELETE FROM allocated_assignments WHERE id = ? AND allocated_by = ?')->execute([$del_id, $checker_id]);
+            $pdo->prepare('DELETE FROM allocated_assignments WHERE id = ?')->execute([$del_id]);
         }
         header('Location: checker-dashboard.php?panel=allocate&saved=del'); exit;
     }
@@ -120,7 +119,6 @@ if ($panel === 'allocate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // ── Review POST ───────────────────────────────────────────────────
 if ($panel === 'review' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    csrf_verify();
     $resp_id = (int)($_POST['response_id'] ?? 0);
     $comment = trim($_POST['comment'] ?? '');
     if ($resp_id && $comment !== '') {
@@ -552,7 +550,6 @@ if ($panel === 'dashboard') {
           <div class="section-hd">Add Feedback</div>
           <div class="add-comment">
             <form method="POST">
-              <?= csrf_input() ?>
               <input type="hidden" name="response_id" value="<?= (int)$view_resp['id'] ?>">
               <textarea name="comment" placeholder="Write your feedback here..." required></textarea>
               <div class="action-choice">
@@ -591,7 +588,6 @@ if ($panel === 'dashboard') {
         <?php if ($alloc_saved_msg) echo "<div class='alert-ok'>$alloc_saved_msg</div>"; ?>
         <?php if ($alloc_err) echo "<div class='alert-err'>" . e($alloc_err) . "</div>"; ?>
         <form method="POST">
-          <?= csrf_input() ?>
           <input type="hidden" name="action" value="allocate">
           <div class="field">
             <label>Assignment Title *</label>
@@ -659,7 +655,6 @@ if ($panel === 'dashboard') {
                 </td>
                 <td>
                   <form method="POST" class="inline-form" onsubmit="return confirm('Delete this assignment and all responses?')">
-                    <?= csrf_input() ?>
                     <input type="hidden" name="action" value="delete_allocation">
                     <input type="hidden" name="del_id" value="<?= $aid ?>">
                     <button class="btn btn-sm btn-danger" type="submit">Delete</button>

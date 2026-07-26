@@ -227,7 +227,6 @@ $tab = in_array($_GET['tab'] ?? '', ['vocab', 'users', 'tasks', 'dashboard']) ? 
 // ── User management POST ──────────────────────────────────────────
 $user_msg = ''; $user_err = '';
 if ($tab === 'users' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    csrf_verify();
     $action = $_POST['action'] ?? '';
 
     if ($action === 'create_user') {
@@ -355,7 +354,6 @@ if ($tab === 'users' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ── Tasks POST ────────────────────────────────────────────────────
 $task_msg = ''; $task_err = '';
 if ($tab === 'tasks' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    csrf_verify();
     $action = $_POST['action'] ?? '';
 
     if ($action === 'allocate') {
@@ -387,7 +385,6 @@ if ($tab === 'tasks' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 $message = ''; $message_idiom = '';
 
 if ($tab === 'vocab' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    csrf_verify();
     $today = date("Y-m-d");
     $type  = $_POST['type'] ?? 'vocab';
 
@@ -752,7 +749,6 @@ show_setup:
       <p class="sub">No admin account found. Create your admin account to get started.</p>
       <?php if ($setup_error): ?><div class="alert-err"><?= e($setup_error) ?></div><?php endif; ?>
       <form method="POST">
-        <?= csrf_input() ?>
         <input type="hidden" name="action" value="setup">
         <div class="field"><label>Full Name</label><input name="full_name" type="text" required autofocus></div>
         <div class="field"><label>Username</label><input name="username" type="text" required autocomplete="username"></div>
@@ -980,7 +976,6 @@ show_page:
         <h2>Set Today's Word</h2>
         <?php if ($message) echo "<div class='msg'>$message</div>"; ?>
         <form method="POST">
-          <?= csrf_input() ?>
           <input type="hidden" name="type" value="vocab">
           <input type="text" name="word" placeholder="English word" required>
           <input type="text" name="marathi" placeholder="Marathi translation (मराठी अर्थ)">
@@ -994,7 +989,6 @@ show_page:
         <h2>Set Today's Idiom</h2>
         <?php if ($message_idiom) echo "<div class='msg'>$message_idiom</div>"; ?>
         <form method="POST">
-          <?= csrf_input() ?>
           <input type="hidden" name="type" value="idiom">
           <input type="text" name="idiom" placeholder="Idiom (English)" required>
           <input type="text" name="idiom_marathi" placeholder="Marathi translation (मराठी अर्थ)">
@@ -1008,7 +1002,6 @@ show_page:
         <h2>Daily Things Vocabulary</h2>
         <?php if ($message_everyday) echo "<div class='msg'>$message_everyday</div>"; ?>
         <form method="POST">
-          <?= csrf_input() ?>
           <input type="hidden" name="type" value="everyday">
           <select name="category" required>
             <option value="Vegetables">Vegetables</option>
@@ -1027,7 +1020,6 @@ show_page:
         <h2>Display Settings</h2>
         <?php if ($message_settings) echo "<div class='msg'>$message_settings</div>"; ?>
         <form method="POST">
-          <?= csrf_input() ?>
           <input type="hidden" name="type" value="visibility">
           <div class="toggle-list">
             <label><input type="checkbox" name="show_vocabulary" value="1" <?= !empty($visibilitySettings['show_vocabulary']) ? 'checked' : '' ?>><span>Show Today's Word</span></label>
@@ -1049,7 +1041,6 @@ show_page:
 
         <?php if ($bulk_message_vocab) echo "<div class='msg'>$bulk_message_vocab</div>"; ?>
         <form method="POST" enctype="multipart/form-data" style="margin-bottom:12px;">
-          <?= csrf_input() ?>
           <input type="hidden" name="type" value="bulk_vocab">
           <input type="file" name="csv_file" accept=".csv" required>
           <button class="btn" type="submit">Upload Vocabulary CSV</button>
@@ -1057,7 +1048,6 @@ show_page:
 
         <?php if ($bulk_message_idiom) echo "<div class='msg'>$bulk_message_idiom</div>"; ?>
         <form method="POST" enctype="multipart/form-data" style="margin-bottom:12px;">
-          <?= csrf_input() ?>
           <input type="hidden" name="type" value="bulk_idiom">
           <input type="file" name="csv_file" accept=".csv" required>
           <button class="btn" type="submit">Upload Idioms CSV</button>
@@ -1065,7 +1055,6 @@ show_page:
 
         <?php if ($bulk_message_everyday) echo "<div class='msg'>$bulk_message_everyday</div>"; ?>
         <form method="POST" enctype="multipart/form-data">
-          <?= csrf_input() ?>
           <input type="hidden" name="type" value="bulk_everyday">
           <input type="file" name="csv_file" accept=".csv" required>
           <button class="btn" type="submit">Upload Everyday Essentials CSV</button>
@@ -1083,7 +1072,6 @@ show_page:
         <?php if ($user_msg) echo "<div class='msg'>$user_msg</div>"; ?>
         <?php if ($user_err) echo "<div class='err'>$user_err</div>"; ?>
         <form method="POST" action="?tab=users<?= $u_search !== '' ? '&q=' . urlencode($u_search) : '' ?>&upage=<?= $u_page ?>">
-          <?= csrf_input() ?>
           <input type="hidden" name="action" value="create_user">
           <input type="text" name="full_name" placeholder="Full Name" required>
           <input type="text" name="username" placeholder="Username (used to log in)" required autocomplete="off">
@@ -1155,7 +1143,6 @@ show_page:
                   <?php if ($uid !== (int)$_SESSION['user_id']): ?>
                   <form method="POST" action="?tab=users<?= $u_search !== '' ? '&q=' . urlencode($u_search) : '' ?>&upage=<?= $u_page ?>" class="inline-form"
                         onsubmit="return confirm('Delete <?= e(addslashes($u['full_name'])) ?>? This cannot be undone.')">
-                    <?= csrf_input() ?>
                     <input type="hidden" name="action" value="delete_user">
                     <input type="hidden" name="del_id" value="<?= $uid ?>">
                     <button class="btn btn-sm btn-danger" type="submit">Delete</button>
@@ -1166,7 +1153,6 @@ show_page:
               <tr class="edit-row" id="edit-<?= $uid ?>" style="display:none;">
                 <td colspan="7">
                   <form method="POST" action="?tab=users<?= $u_search !== '' ? '&q=' . urlencode($u_search) : '' ?>&upage=<?= $u_page ?>">
-                    <?= csrf_input() ?>
                     <input type="hidden" name="action" value="update_user">
                     <input type="hidden" name="upd_id" value="<?= $uid ?>">
                     <div class="edit-fields">
@@ -1246,7 +1232,6 @@ show_page:
         <?php if ($task_msg) echo "<div class='msg'>$task_msg</div>"; ?>
         <?php if ($task_err) echo "<div class='err'>$task_err</div>"; ?>
         <form method="POST">
-          <?= csrf_input() ?>
           <input type="hidden" name="action" value="allocate">
           <input type="text" name="title" placeholder="Assignment title" required>
           <select name="type">
@@ -1301,7 +1286,6 @@ show_page:
                 </td>
                 <td>
                   <form method="POST" class="inline-form" onsubmit="return confirm('Delete this assignment? Student responses will also be removed.')">
-                    <?= csrf_input() ?>
                     <input type="hidden" name="action" value="delete_allocation">
                     <input type="hidden" name="del_id" value="<?= $aid ?>">
                     <button class="btn btn-sm btn-danger" type="submit">Delete</button>

@@ -2,7 +2,6 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 require_once __DIR__ . '/remember_me.php';
-require_once __DIR__ . '/csrf.php';
 
 function require_role(array $roles) {
     if (empty($_SESSION['user_id'])) {
