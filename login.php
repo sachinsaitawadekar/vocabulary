@@ -13,14 +13,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username      = trim($_POST['username'] ?? '');
     $password      = $_POST['password'] ?? '';
     $captcha_input = trim($_POST['captcha'] ?? '');
-    $captcha_ans   = (int)($_SESSION['captcha_login_answer'] ?? -1);
+    $captcha_ans   = isset($_SESSION['captcha_login_answer']) ? (int)$_SESSION['captcha_login_answer'] : null;
 
     // Invalidate used captcha so it must reload
     unset($_SESSION['captcha_login_answer']);
 
     if ($username === '' || $password === '') {
         $error = 'Please enter your username and password.';
-    } elseif ((int)$captcha_input !== $captcha_ans) {
+    } elseif ($captcha_ans === null || (int)$captcha_input !== $captcha_ans) {
         $error = 'Incorrect answer to the security check. Please try again.';
     } else {
         require __DIR__ . '/db.php';

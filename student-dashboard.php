@@ -94,7 +94,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'respo
             $respond_error = 'File too large. Maximum is 10 MB.';
         } else {
             $ext = strtolower(pathinfo($resp_file['name'], PATHINFO_EXTENSION));
-            if (!in_array($ext, ['pdf','txt','jpg','jpeg','png'], true)) {
+            $finfo     = finfo_open(FILEINFO_MIME_TYPE);
+            $real_mime = finfo_file($finfo, $resp_file['tmp_name']);
+            finfo_close($finfo);
+            $ok_exts  = ['pdf','txt','jpg','jpeg','png'];
+            $ok_mimes = ['application/pdf','text/plain','image/jpeg','image/png'];
+            if (!in_array($ext, $ok_exts, true) || !in_array($real_mime, $ok_mimes, true)) {
                 $respond_error = 'Invalid file type. Allowed: PDF, TXT, JPG, PNG.';
             } else {
                 $upload_dir = __DIR__ . '/uploads/assignments/';
@@ -130,6 +135,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'respo
             }
         }
         if (!$respond_error && $alloc_id) {
+            $old_stmt = $pdo->prepare("SELECT file_path FROM allocated_assignment_responses WHERE allocation_id=? AND student_id=?");
+            $old_stmt->execute([$alloc_id, $student_id]);
+            $old_file = $old_stmt->fetchColumn() ?: null;
+
             $pdo->prepare(
                 "INSERT INTO allocated_assignment_responses
                     (allocation_id, student_id, response, file_path, original_filename, status)
@@ -139,6 +148,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'respo
                     original_filename=VALUES(original_filename),
                     status='pending', responded_at=NOW()"
             )->execute([$alloc_id, $student_id, $response ?: null, $resp_file_path, $resp_filename]);
+
+            if ($resp_file_path && $old_file && $old_file !== $resp_file_path) {
+                $old_disk = __DIR__ . '/uploads/assignments/' . $old_file;
+                if (is_file($old_disk)) @unlink($old_disk);
+            }
+
             $respond_success = 'Response submitted! Your checker will review it shortly.';
         }
     }

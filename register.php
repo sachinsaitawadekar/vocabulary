@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($name === '') { $errors[] = 'Full name is required.'; }
   if (!preg_match('/^\d{10}$/', $mobile_raw)) { $errors[] = 'Mobile number must be 10 digits.'; }
 
-  if ($captcha === '' || (int)$captcha !== (int)($_SESSION['captcha_register_answer'] ?? -1)) {
+  if ($captcha === '' || !isset($_SESSION['captcha_register_answer']) || (int)$captcha !== (int)$_SESSION['captcha_register_answer']) {
     $errors[] = 'Incorrect captcha answer.';
   }
 

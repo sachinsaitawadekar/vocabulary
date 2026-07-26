@@ -258,6 +258,7 @@ if ($tab === 'users' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete_user') {
         $del_id = (int)($_POST['del_id'] ?? 0);
         if ($del_id && $del_id !== (int)$_SESSION['user_id']) {
+            $pdo->prepare('DELETE FROM remember_tokens WHERE user_id = ?')->execute([$del_id]);
             $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$del_id]);
             $user_msg = '✅ User deleted.';
         } else {
@@ -328,9 +329,14 @@ if ($tab === 'users' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $group_id = ($_POST['group_id'] ?? '') === '' ? null : (int)$_POST['group_id'];
         if (!$upd_id || !$fn || !$un) {
             $user_err = 'Name and username are required.';
+        } elseif ($pw !== '' && strlen($pw) < 6) {
+            $user_err = 'New password must be at least 6 characters.';
         } else {
             try {
-                if ($pw !== '' && strlen($pw) >= 6) {
+                $old_role_stmt = $pdo->prepare('SELECT role FROM users WHERE id=?');
+                $old_role_stmt->execute([$upd_id]);
+                $old_role = $old_role_stmt->fetchColumn();
+                if ($pw !== '') {
                     $hash = password_hash($pw, PASSWORD_DEFAULT);
                     $pdo->prepare('UPDATE users SET full_name=?, username=?, role=?, password_hash=? WHERE id=?')
                         ->execute([$fn, $un, $role, $hash, $upd_id]);
@@ -338,12 +344,16 @@ if ($tab === 'users' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     $pdo->prepare('UPDATE users SET full_name=?, username=?, role=? WHERE id=?')
                         ->execute([$fn, $un, $role, $upd_id]);
                 }
+                if ($role !== $old_role) {
+                    $pdo->prepare('DELETE FROM remember_tokens WHERE user_id=?')->execute([$upd_id]);
+                }
                 $pdo->prepare('DELETE FROM student_group_members WHERE student_id=?')->execute([$upd_id]);
                 if ($group_id && $role === 'student') {
                     $pdo->prepare('INSERT IGNORE INTO student_group_members (group_id, student_id) VALUES (?,?)')->execute([$group_id, $upd_id]);
                 }
                 if ($upd_id === (int)$_SESSION['user_id']) {
                     $_SESSION['full_name'] = $fn;
+                    $_SESSION['role']      = $role;
                 }
                 $user_msg = '✅ User updated.';
             } catch (PDOException $e) {

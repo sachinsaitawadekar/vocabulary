@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($age < 5 || $age > 120) { $errors[] = 'Please enter a valid age (5-120).'; }
   if (!array_key_exists($contestDate, $contestDateOptions)) { $errors[] = 'Please select a contest date.'; }
   if ($location === '') { $errors[] = 'Please let us know your location.'; }
-  if ($captcha === '' || (int)$captcha !== (int)($_SESSION['captcha_contest_answer'] ?? -1)) {
+  if ($captcha === '' || !isset($_SESSION['captcha_contest_answer']) || (int)$captcha !== (int)$_SESSION['captcha_contest_answer']) {
     $errors[] = 'Incorrect captcha answer.';
   }
 
