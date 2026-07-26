@@ -167,6 +167,10 @@ try {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
 } catch (Throwable $e) {}
 
+try { $pdo->exec("ALTER TABLE users ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1"); } catch (Throwable $e) {}
+try { $pdo->exec("ALTER TABLE users ADD COLUMN active_since DATETIME NULL"); } catch (Throwable $e) {}
+try { $pdo->exec("UPDATE users SET active_since = created_at WHERE active_since IS NULL"); } catch (Throwable $e) {}
+
 // ── Load visibility settings ───────────────────────────────────────
 $sanitize = static fn($value) => trim((string)$value);
 $message_everyday = '';
@@ -221,6 +225,15 @@ if ($isSetup) {
 if (empty($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header('Location: login.php'); exit;
 }
+try {
+    $act = $pdo->prepare('SELECT is_active FROM users WHERE id = ? LIMIT 1');
+    $act->execute([$_SESSION['user_id']]);
+    if (!(int)$act->fetchColumn()) {
+        session_destroy();
+        header('Location: login.php?e=deactivated');
+        exit;
+    }
+} catch (Throwable $_ex) {}
 
 // ── Active tab ────────────────────────────────────────────────────
 $tab = in_array($_GET['tab'] ?? '', ['vocab', 'users', 'tasks', 'dashboard']) ? $_GET['tab'] : 'vocab';
@@ -242,7 +255,7 @@ if ($tab === 'users' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             try {
                 $hash   = password_hash($pw, PASSWORD_DEFAULT);
-                $ins    = $pdo->prepare('INSERT INTO users (username, password_hash, full_name, role) VALUES (?,?,?,?)');
+                $ins    = $pdo->prepare('INSERT INTO users (username, password_hash, full_name, role, active_since) VALUES (?,?,?,?,NOW())');
                 $ins->execute([$un, $hash, $fn, $role]);
                 $new_id = (int)$pdo->lastInsertId();
                 if ($group_id && $role === 'student') {
@@ -263,6 +276,37 @@ if ($tab === 'users' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $user_msg = '✅ User deleted.';
         } else {
             $user_err = 'Cannot delete your own account.';
+        }
+    }
+
+    if ($action === 'deactivate_user') {
+        $did = (int)($_POST['did'] ?? 0);
+        if ($did && $did !== (int)$_SESSION['user_id']) {
+            // Delete uploaded response files from disk
+            $file_rows = $pdo->prepare("SELECT file_path FROM allocated_assignment_responses WHERE student_id = ? AND file_path IS NOT NULL");
+            $file_rows->execute([$did]);
+            foreach ($file_rows->fetchAll(PDO::FETCH_COLUMN) as $fp) {
+                $disk = __DIR__ . '/uploads/assignments/' . $fp;
+                if (is_file($disk)) @unlink($disk);
+            }
+            // Delete checker comments on this student's responses (no FK cascade)
+            $pdo->prepare("DELETE rc FROM allocated_response_comments rc JOIN allocated_assignment_responses r ON r.id = rc.response_id WHERE r.student_id = ?")->execute([$did]);
+            // Delete the student's responses
+            $pdo->prepare("DELETE FROM allocated_assignment_responses WHERE student_id = ?")->execute([$did]);
+            // Kill persistent sessions
+            $pdo->prepare('DELETE FROM remember_tokens WHERE user_id=?')->execute([$did]);
+            $pdo->prepare('UPDATE users SET is_active=0 WHERE id=?')->execute([$did]);
+            $user_msg = '✅ User deactivated.';
+        } else {
+            $user_err = 'Cannot deactivate your own account.';
+        }
+    }
+
+    if ($action === 'activate_user') {
+        $aid = (int)($_POST['aid'] ?? 0);
+        if ($aid) {
+            $pdo->prepare('UPDATE users SET is_active=1, active_since=NOW() WHERE id=?')->execute([$aid]);
+            $user_msg = '✅ User activated.';
         }
     }
 
@@ -621,7 +665,7 @@ $users      = [];
 try {
     $like = '%' . $u_search . '%';
 
-    $count_stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE full_name LIKE ? OR username LIKE ? OR role LIKE ?");
+    $count_stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE is_active = 1 AND (full_name LIKE ? OR username LIKE ? OR role LIKE ?)");
     $count_stmt->execute([$like, $like, $like]);
     $u_total  = (int)$count_stmt->fetchColumn();
     $u_pages  = max(1, (int)ceil($u_total / $u_per_page));
@@ -633,7 +677,7 @@ try {
                 (SELECT sgm.group_id FROM student_group_members sgm WHERE sgm.student_id = u.id LIMIT 1) AS current_group_id,
                 (SELECT sg.name FROM student_group_members sgm JOIN student_groups sg ON sg.id = sgm.group_id WHERE sgm.student_id = u.id LIMIT 1) AS current_group_name
          FROM users u
-         WHERE u.full_name LIKE ? OR u.username LIKE ? OR u.role LIKE ?
+         WHERE u.is_active = 1 AND (u.full_name LIKE ? OR u.username LIKE ? OR u.role LIKE ?)
          ORDER BY u.role, u.full_name
          LIMIT ? OFFSET ?"
     );
@@ -644,6 +688,15 @@ try {
     $data_stmt->bindValue(5, (int)$u_offset,   PDO::PARAM_INT);
     $data_stmt->execute();
     $users = $data_stmt->fetchAll();
+} catch (Throwable $e) {}
+
+$inactive_users = [];
+try {
+    $inactive_users = $pdo->query(
+        "SELECT u.id, u.username, u.full_name, u.role, u.created_at,
+                (SELECT sg.name FROM student_group_members sgm JOIN student_groups sg ON sg.id = sgm.group_id WHERE sgm.student_id = u.id LIMIT 1) AS current_group_name
+         FROM users u WHERE u.is_active = 0 ORDER BY u.full_name"
+    )->fetchAll();
 } catch (Throwable $e) {}
 
 // ── Groups ────────────────────────────────────────────────────────
@@ -688,7 +741,7 @@ try {
     }
 } catch (Throwable $e) {}
 $totalStudents = 0;
-try { $totalStudents = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role='student'")->fetchColumn(); } catch (Throwable $e) {}
+try { $totalStudents = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role='student' AND is_active=1")->fetchColumn(); } catch (Throwable $e) {}
 
 // ── Dashboard report data ─────────────────────────────────────────
 $dash_summary    = ['total_assignments' => 0, 'total_students' => 0, 'pending' => 0, 'needs_revision' => 0, 'reviewed' => 0];
@@ -698,7 +751,7 @@ if ($tab === 'dashboard') {
         $srow = $pdo->query(
             "SELECT
                 (SELECT COUNT(*) FROM allocated_assignments)                                       AS total_assignments,
-                (SELECT COUNT(*) FROM users WHERE role='student')                                  AS total_students,
+                (SELECT COUNT(*) FROM users WHERE role='student' AND is_active=1)                   AS total_students,
                 (SELECT COUNT(*) FROM allocated_assignment_responses WHERE status='pending')        AS pending,
                 (SELECT COUNT(*) FROM allocated_assignment_responses WHERE status='needs_revision') AS needs_revision,
                 (SELECT COUNT(*) FROM allocated_assignment_responses WHERE status='reviewed')       AS reviewed"
@@ -717,9 +770,9 @@ if ($tab === 'dashboard') {
                     SUM(CASE WHEN r.status = 'reviewed'       THEN 1 ELSE 0 END)        AS reviewed
              FROM users u
              LEFT JOIN student_group_members sgm ON sgm.student_id = u.id
-             LEFT JOIN allocated_assignments aa  ON aa.allocated_group_id = sgm.group_id AND aa.created_at >= u.created_at
+             LEFT JOIN allocated_assignments aa  ON aa.allocated_group_id = sgm.group_id AND aa.created_at >= u.active_since
              LEFT JOIN allocated_assignment_responses r ON r.allocation_id = aa.id AND r.student_id = u.id
-             WHERE u.role = 'student'
+             WHERE u.role = 'student' AND u.is_active = 1
              GROUP BY u.id
              ORDER BY u.full_name"
         )->fetchAll();
@@ -818,7 +871,9 @@ show_page:
            border:none; border-radius:8px; cursor:pointer; transition:background 0.2s; }
     .btn:hover { background:#0056b3; }
     .btn-full { width:100%; padding:12px; }
-    .btn-danger { background:#ef4444; } .btn-danger:hover { background:#dc2626; }
+    .btn-danger  { background:#ef4444; } .btn-danger:hover  { background:#dc2626; }
+    .btn-warning { background:#f59e0b; } .btn-warning:hover { background:#d97706; }
+    .btn-success { background:#10b981; } .btn-success:hover { background:#059669; }
     .btn-sm { padding:8px 14px; font-size:0.85rem; }
 
     /* Messages */
@@ -1165,6 +1220,13 @@ show_page:
                           onclick="toggleEdit(<?= $uid ?>)">Edit</button>
                   <?php if ($uid !== (int)$_SESSION['user_id']): ?>
                   <form method="POST" action="?tab=users<?= $u_search !== '' ? '&q=' . urlencode($u_search) : '' ?>&upage=<?= $u_page ?>" class="inline-form"
+                        onsubmit="return confirm('Deactivate <?= e(addslashes($u['full_name'])) ?>? They will not be able to log in.')">
+                    <?= csrf_input() ?>
+                    <input type="hidden" name="action" value="deactivate_user">
+                    <input type="hidden" name="did" value="<?= $uid ?>">
+                    <button class="btn btn-sm btn-warning" type="submit">Deactivate</button>
+                  </form>
+                  <form method="POST" action="?tab=users<?= $u_search !== '' ? '&q=' . urlencode($u_search) : '' ?>&upage=<?= $u_page ?>" class="inline-form"
                         onsubmit="return confirm('Delete <?= e(addslashes($u['full_name'])) ?>? This cannot be undone.')">
                     <?= csrf_input() ?>
                     <input type="hidden" name="action" value="delete_user">
@@ -1243,6 +1305,63 @@ show_page:
 
         <?php else: ?>
           <p class="note"><?= $u_search !== '' ? 'No users match your search.' : 'No users yet.' ?></p>
+        <?php endif; ?>
+      </div>
+
+      <!-- Deactivated Users -->
+      <div class="card">
+        <h2>Deactivated Users <span style="font-size:0.8rem;font-weight:400;color:#6b7280;">(<?= count($inactive_users) ?>)</span></h2>
+        <?php if ($inactive_users): ?>
+        <div class="users-table-wrap">
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Full Name</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Group</th>
+                <th>Joined</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($inactive_users as $i => $u): $uid = (int)$u['id']; ?>
+              <tr class="user-row" style="opacity:0.65;">
+                <td style="color:#9ca3af;font-size:0.82rem;"><?= $i + 1 ?></td>
+                <td style="font-weight:600;color:#111827;"><?= e($u['full_name']) ?></td>
+                <td style="color:#6b7280;">@<?= e($u['username']) ?></td>
+                <td><span class="role-badge role-<?= e($u['role']) ?>"><?= ucfirst(e($u['role'])) ?></span></td>
+                <td>
+                  <?php if ($u['current_group_name']): ?>
+                    <span class="type-badge" style="background:#e0f2fe;color:#0369a1;"><?= e($u['current_group_name']) ?></span>
+                  <?php else: ?>
+                    <span style="color:#9ca3af;font-size:0.82rem;">—</span>
+                  <?php endif; ?>
+                </td>
+                <td style="color:#6b7280;font-size:0.85rem;"><?= e(date('d M Y', strtotime($u['created_at']))) ?></td>
+                <td>
+                  <form method="POST" action="?tab=users" class="inline-form">
+                    <?= csrf_input() ?>
+                    <input type="hidden" name="action" value="activate_user">
+                    <input type="hidden" name="aid" value="<?= $uid ?>">
+                    <button class="btn btn-sm btn-success" type="submit">Activate</button>
+                  </form>
+                  <form method="POST" action="?tab=users" class="inline-form"
+                        onsubmit="return confirm('Permanently delete <?= e(addslashes($u['full_name'])) ?>? This cannot be undone.')">
+                    <?= csrf_input() ?>
+                    <input type="hidden" name="action" value="delete_user">
+                    <input type="hidden" name="del_id" value="<?= $uid ?>">
+                    <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+                  </form>
+                </td>
+              </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+        <?php else: ?>
+          <p class="note">No deactivated users.</p>
         <?php endif; ?>
       </div>
 

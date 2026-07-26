@@ -173,7 +173,7 @@ try {
          LEFT JOIN student_groups sg ON sg.id = aa.allocated_group_id
          LEFT JOIN allocated_assignment_responses r
                ON r.allocation_id = aa.id AND r.student_id = ?
-         WHERE aa.created_at >= me.created_at
+         WHERE aa.created_at >= me.active_since
            AND (
                aa.allocated_group_id IN (
                    SELECT group_id FROM student_group_members WHERE student_id = ?

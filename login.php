@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         require __DIR__ . '/db.php';
         try {
-            $stmt = $pdo->prepare('SELECT id, password_hash, role, full_name FROM users WHERE username = ?');
+            $stmt = $pdo->prepare('SELECT id, password_hash, role, full_name, is_active FROM users WHERE username = ?');
             $stmt->execute([$username]);
             $user = $stmt->fetch();
         } catch (Throwable $e) {
@@ -33,6 +33,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($user && password_verify($password, $user['password_hash'])) {
+            if (!(int)$user['is_active']) {
+                $error = 'Your account has been deactivated. Please contact the administrator.';
+            } else {
             session_regenerate_id(true);
             $_SESSION['user_id']   = $user['id'];
             $_SESSION['role']      = $user['role'];
@@ -58,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($user['role'] === 'admin')   { header('Location: admin.php'); exit; }
             if ($user['role'] === 'checker') { header('Location: checker-dashboard.php'); exit; }
             header('Location: student-dashboard.php'); exit;
+            } // end else (is_active)
         } else {
             $error = 'Invalid username or password.';
         }
@@ -65,9 +69,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $err_msg = match($_GET['e'] ?? '') {
-    'access' => 'You do not have permission to access that page.',
-    'login'  => 'Please log in to continue.',
-    default  => '',
+    'access'      => 'You do not have permission to access that page.',
+    'login'       => 'Please log in to continue.',
+    'deactivated' => 'Your account has been deactivated. Please contact the administrator.',
+    default       => '',
 };
 ?>
 <!DOCTYPE html>

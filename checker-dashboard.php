@@ -227,7 +227,7 @@ $students_list = [];
 if ($panel === 'students') {
     try {
         $like = '%' . $st_search . '%';
-        $cnt  = $pdo->prepare("SELECT COUNT(*) FROM users u WHERE u.role='student' AND (u.full_name LIKE ? OR u.username LIKE ?)");
+        $cnt  = $pdo->prepare("SELECT COUNT(*) FROM users u WHERE u.role='student' AND u.is_active=1 AND (u.full_name LIKE ? OR u.username LIKE ?)");
         $cnt->execute([$like, $like]);
         $st_total  = (int)$cnt->fetchColumn();
         $st_pages  = max(1, (int)ceil($st_total / $st_per_page));
@@ -238,7 +238,7 @@ if ($panel === 'students') {
                     (SELECT sg.name FROM student_group_members sgm
                      JOIN student_groups sg ON sg.id = sgm.group_id
                      WHERE sgm.student_id = u.id LIMIT 1) AS group_name
-             FROM users u WHERE u.role='student'
+             FROM users u WHERE u.role='student' AND u.is_active=1
              AND (u.full_name LIKE ? OR u.username LIKE ?)
              ORDER BY u.full_name LIMIT ? OFFSET ?"
         );
@@ -259,7 +259,7 @@ if ($panel === 'dashboard') {
         $srow = $pdo->query(
             "SELECT
                 (SELECT COUNT(*) FROM allocated_assignments)                                        AS total_assignments,
-                (SELECT COUNT(*) FROM users WHERE role='student')                                   AS total_students,
+                (SELECT COUNT(*) FROM users WHERE role='student' AND is_active=1)                    AS total_students,
                 (SELECT COUNT(*) FROM allocated_assignment_responses WHERE status='pending')        AS pending,
                 (SELECT COUNT(*) FROM allocated_assignment_responses WHERE status='needs_revision')  AS needs_revision,
                 (SELECT COUNT(*) FROM allocated_assignment_responses WHERE status='reviewed')        AS reviewed"
@@ -278,9 +278,9 @@ if ($panel === 'dashboard') {
                     SUM(CASE WHEN r.status = 'reviewed'       THEN 1 ELSE 0 END)                AS reviewed
              FROM users u
              LEFT JOIN student_group_members sgm ON sgm.student_id = u.id
-             LEFT JOIN allocated_assignments aa  ON aa.allocated_group_id = sgm.group_id AND aa.created_at >= u.created_at
+             LEFT JOIN allocated_assignments aa  ON aa.allocated_group_id = sgm.group_id AND aa.created_at >= u.active_since
              LEFT JOIN allocated_assignment_responses r ON r.allocation_id = aa.id AND r.student_id = u.id
-             WHERE u.role = 'student'
+             WHERE u.role = 'student' AND u.is_active = 1
              GROUP BY u.id
              ORDER BY u.full_name"
         )->fetchAll();
