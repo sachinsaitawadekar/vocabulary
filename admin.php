@@ -717,7 +717,7 @@ if ($tab === 'dashboard') {
                     SUM(CASE WHEN r.status = 'reviewed'       THEN 1 ELSE 0 END)        AS reviewed
              FROM users u
              LEFT JOIN student_group_members sgm ON sgm.student_id = u.id
-             LEFT JOIN allocated_assignments aa  ON aa.allocated_group_id = sgm.group_id
+             LEFT JOIN allocated_assignments aa  ON aa.allocated_group_id = sgm.group_id AND aa.created_at >= u.created_at
              LEFT JOIN allocated_assignment_responses r ON r.allocation_id = aa.id AND r.student_id = u.id
              WHERE u.role = 'student'
              GROUP BY u.id
