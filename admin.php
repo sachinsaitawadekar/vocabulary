@@ -43,6 +43,13 @@ try {
     }
 } catch (Throwable $e) {}
 
+try {
+    $col = $pdo->query("SHOW COLUMNS FROM content_settings LIKE 'show_register'");
+    if ($col->rowCount() === 0) {
+        $pdo->exec("ALTER TABLE content_settings ADD COLUMN show_register TINYINT(1) NOT NULL DEFAULT 1");
+    }
+} catch (Throwable $e) {}
+
 // Align legacy everyday_items columns
 try { $col = $pdo->query("SHOW COLUMNS FROM everyday_items LIKE 'marathi_translation'"); if ($col->rowCount() === 0) { $pdo->exec("ALTER TABLE everyday_items ADD COLUMN marathi_translation VARCHAR(150) NULL"); } } catch (Throwable $e) {}
 try { $col = $pdo->query("SHOW COLUMNS FROM everyday_items LIKE 'marathi_name'"); if ($col->rowCount() > 0) { $pdo->exec("ALTER TABLE everyday_items CHANGE marathi_name marathi_translation VARCHAR(150) NULL"); } } catch (Throwable $e) {}
@@ -183,9 +190,10 @@ $visibilitySettings = [
     'show_idiom'       => 1,
     'show_everyday'    => 1,
     'show_contest_cta' => 1,
+    'show_register'    => 1,
 ];
 try {
-    $stmt = $pdo->query("SELECT show_vocabulary, show_idiom, show_everyday, show_contest_cta FROM content_settings WHERE id = 1 LIMIT 1");
+    $stmt = $pdo->query("SELECT show_vocabulary, show_idiom, show_everyday, show_contest_cta, show_register FROM content_settings WHERE id = 1 LIMIT 1");
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($row) $visibilitySettings = array_merge($visibilitySettings, array_intersect_key($row, $visibilitySettings));
 } catch (Throwable $e) {}
@@ -517,17 +525,19 @@ if ($tab === 'vocab' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
     } elseif ($type === 'visibility') {
-        $showVocab   = isset($_POST['show_vocabulary'])  ? 1 : 0;
-        $showIdiom   = isset($_POST['show_idiom'])       ? 1 : 0;
-        $showEveryday= isset($_POST['show_everyday'])    ? 1 : 0;
-        $showContest = isset($_POST['show_contest_cta']) ? 1 : 0;
+        $showVocab    = isset($_POST['show_vocabulary'])  ? 1 : 0;
+        $showIdiom    = isset($_POST['show_idiom'])       ? 1 : 0;
+        $showEveryday = isset($_POST['show_everyday'])    ? 1 : 0;
+        $showContest  = isset($_POST['show_contest_cta']) ? 1 : 0;
+        $showRegister = isset($_POST['show_register'])    ? 1 : 0;
         try {
-            $pdo->prepare("UPDATE content_settings SET show_vocabulary=:sv, show_idiom=:si, show_everyday=:se, show_contest_cta=:sc WHERE id=1")
-                ->execute([':sv'=>$showVocab,':si'=>$showIdiom,':se'=>$showEveryday,':sc'=>$showContest]);
+            $pdo->prepare("UPDATE content_settings SET show_vocabulary=:sv, show_idiom=:si, show_everyday=:se, show_contest_cta=:sc, show_register=:sr WHERE id=1")
+                ->execute([':sv'=>$showVocab,':si'=>$showIdiom,':se'=>$showEveryday,':sc'=>$showContest,':sr'=>$showRegister]);
             $visibilitySettings['show_vocabulary']  = $showVocab;
             $visibilitySettings['show_idiom']       = $showIdiom;
             $visibilitySettings['show_everyday']    = $showEveryday;
             $visibilitySettings['show_contest_cta'] = $showContest;
+            $visibilitySettings['show_register']    = $showRegister;
             $message_settings = "✅ Display settings updated.";
         } catch (Throwable $e) {
             $message_settings = "❌ Unable to update display settings.";
@@ -1100,6 +1110,7 @@ show_page:
             <label><input type="checkbox" name="show_idiom" value="1" <?= !empty($visibilitySettings['show_idiom']) ? 'checked' : '' ?>><span>Show Today's Idiom</span></label>
             <label><input type="checkbox" name="show_everyday" value="1" <?= !empty($visibilitySettings['show_everyday']) ? 'checked' : '' ?>><span>Show Everyday Essentials</span></label>
             <label><input type="checkbox" name="show_contest_cta" value="1" <?= !empty($visibilitySettings['show_contest_cta']) ? 'checked' : '' ?>><span>Show Contest Button</span></label>
+            <label><input type="checkbox" name="show_register" value="1" <?= !empty($visibilitySettings['show_register']) ? 'checked' : '' ?>><span>Show Register Menu</span></label>
           </div>
           <button class="btn btn-full" type="submit">Save Display Settings</button>
         </form>
